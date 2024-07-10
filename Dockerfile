@@ -145,7 +145,7 @@ COPY scripts $SCRIPTS
 VOLUME ["$APP_FILES"]
 VOLUME ["$WORLD_FILES"]
 
-LABEL org.opencontainers.image.source="https://github.com/Mist-Hunter/valheim-docker"
+LABEL org.opencontainers.image.source="https://github.com/Teriyakidactyl/docker-valheim-server"
 
 EXPOSE 2456/udp 2457/udp
 
