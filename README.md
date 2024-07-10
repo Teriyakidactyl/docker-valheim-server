@@ -65,30 +65,7 @@ The image includes several scripts to manage the server:
 
 The container includes a basic healthcheck that verifies if the Valheim server process is running.
 
-## Source
-
-This project is open source. You can find the source code at:
-[https://github.com/Mist-Hunter/valheim-docker](https://github.com/Mist-Hunter/valheim-docker)
-
 ## Support
 
 For issues, feature requests, or contributions, please use the GitHub issue tracker.
 
-## File Structure
-
-```
-/app/
-├── bin/
-│   └── myapp  (main executable)
-├── config/
-│   ├── config.yml
-│   └── ...
-├── data/
-│   └── ...  (persistent data, if any)
-├── logs/
-│   └── ...  (if logging to files)
-├── scripts/
-│   ├── entrypoint.sh
-│   └── ...
-└── static/  (if applicable, e.g., for a web app)
-```
