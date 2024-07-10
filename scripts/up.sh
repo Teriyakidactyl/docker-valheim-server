@@ -20,9 +20,8 @@ main() {
 
     # Infinite loop while APP_PID is running
     while kill -0 $APP_PID > /dev/null 2>&1; do
-        current_minute=$(date '+%M')
-
-        #FIXME /scripts/up.sh: line 25: ((: 09: value too great for base (error token is "09")
+        current_minute=$(date '+%M' | sed 's/^0*//')
+        
         if (( current_minute % 10 == 0 )); then
             log "$(uptime)"
         fi
