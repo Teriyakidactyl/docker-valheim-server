@@ -1,8 +1,8 @@
 # Valheim Server Docker Image
 
-This Docker image provides a customizable Valheim dedicated server, supporting both x86_64 and ARM architectures.
+This Docker image provides a customizable Valheim dedicated server, supporting **both x86_64 and ARM architectures.**
 
-![Teriyakidactyl Delivers!™](teriyakidactyl_valheim.png)
+![Teriyakidactyl Delivers!™](/images/teriyakidactyl_valheim.png)
 
 ## Features
 
@@ -28,7 +28,7 @@ Configure your server using the following environment variables:
 ## Usage
 
 1. Pull the image:
-docker pull [your-docker-image-name]
+docker pull [ghcr.io/teriyakidactyl/docker-valheim-server:lateste]
 
 2. Run the container:
 docker run -d 
@@ -37,7 +37,7 @@ docker run -d
 -e WORLD_NAME="MyWorld" 
 -e SERVER_PASS="secret" 
 -v /path/to/valheim/data:/world 
-[your-docker-image-name]
+[ghcr.io/teriyakidactyl/docker-valheim-server:latest]
 
 Replace `/path/to/valheim/data` with the path where you want to store your world data.
 
@@ -45,7 +45,7 @@ Replace `/path/to/valheim/data` with the path where you want to store your world
 
 To build the image yourself:
 
-docker build -t [your-docker-image-name] .
+docker build -t [ghcr.io/teriyakidactyl/docker-valheim-server:latest] .
 
 The Dockerfile includes a conditional build stage for ARM architectures, which compiles Box86 and Box64 for compatibility.
 
