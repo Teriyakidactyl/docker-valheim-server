@@ -14,7 +14,8 @@ This Docker image provides a customizable Valheim dedicated server, supporting *
 - Colored (even in Portainer), organized logs
  
 ![Teriyakidactyl Delivers!™](/images/logs.png)
-## Teriyakidactyl Delivers!™
+
+**_Teriyakidactyl Delivers!™_**
 
 ## Environment Variables
 
