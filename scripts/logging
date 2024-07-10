@@ -1,0 +1,133 @@
+
+colorize() {
+    local line="$1"
+    local colored=false
+
+    # Define tput color variables
+    local RED=$(tput setaf 1)
+    local GREEN=$(tput setaf 2)
+    local YELLOW=$(tput setaf 3)
+    local BLUE=$(tput setaf 4)
+    local MAGENTA=$(tput setaf 5)
+    local CYAN=$(tput setaf 6)
+    local WHITE=$(tput setaf 7)
+    local BOLD=$(tput bold)
+    local NC=$(tput sgr0) # Reset all attributes
+
+    # Define color rules (regex -> color)
+    local -A line_rules=(
+        ["(Shader|HDR|shader|WARNING|Unloading|Total:|UnloadTime|Camera|Null|null|NULL)"]="$WHITE"
+        ["(Valheim l-.*|Load world:.*|isModded:.*|Am I Host\?|version|world)"]="$YELLOW"
+        ["(Connections|ZDOS:|sent:|recv:|New connection|queue|connecting|Connecting|socket|Socket|RPC|Accepting connection|socket|msg|Connected|Got connection|handshake)"]="$CYAN"
+        ["(New peer connected|<color=orange>.*</color>|ZDOID)"]="$GREEN"
+        ["(ERROR:|Exception|HDSRDP|wrong password)"]="${BOLD}${RED}"
+        ["(Added .* locations,|Loaded .* locations|Loading .* zdos|save|Save|backup)"]="$MAGENTA"
+        ["(Console: )"]="$BLUE"
+    )
+
+    local -A word_rules=(
+        ["(varExp|\$SERVER_NAME|\$SERVER_PASS|\$WORLD_NAME)"]="${BOLD}${YELLOW}"
+        ["(?:ZDOID from ([\w\s]+) :)"]="${BOLD}${GREEN}"
+        ["(SteamID \d{17}|client \d{17}|socket \d{17})"]="${BOLD}${CYAN}"
+    )
+
+    # Format whole line on any match
+    for regex in "${!line_rules[@]}"; do
+        if [[ $line =~ $regex ]]; then
+            line=$(echo "${line_rules[$regex]}${line}${NC}")
+        fi
+    done
+
+    # Only format match
+    for regex in "${!word_rules[@]}"; do
+        while [[ $line =~ $regex ]]; do
+            matched_part="${BASH_REMATCH[0]}"
+            styled_part="${word_rules[$regex]}${matched_part}${NC}"
+            line="${line/${matched_part}/${styled_part}}"
+        done
+    done
+
+    echo "$line"
+
+}
+
+log_tails() {
+
+    # Define the log files to monitor
+    local LOG_FILES=($(find "$LOGS" -type f \( -name "*.log" -o -name "*log.txt" \)))
+
+    # Tail each log file and process each line
+    for file in "${LOG_FILES[@]}"; do
+        # Check if the file exists and is readable
+        if [ -f "$file" ] && [ -r "$file" ]; then
+            # Use tail and while loop to process each line
+            tail -f "$file" | while IFS= read -r line; do
+                log "$line" "$(basename "$file")"
+            done &
+            export tail_pids+=($!)
+        else
+            log "File '$file' does not exist or is not readable." "common/monitor_logs"
+        fi
+    done
+
+}
+
+log_stdout() {
+
+    local caller_function="${FUNCNAME[1]}"
+    local filename="${1:-$caller_function}"
+    while IFS= read -r line; do
+        log "$line" "$filename"
+    done
+
+}
+
+log() {
+
+    local caller_function="${FUNCNAME[1]}"
+    local line="$1"
+    local filename="${2:-$caller_function}"
+
+    local current_date=$(date "+%m/%d/%Y")
+    local current_time=$(date "+%H:%M:%S")
+    local formatted_date=""
+    local formatted_time=""
+
+    # Trim all whitespace characters, including newlines
+    line=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/\r//' -e 's/\n//')
+
+    # Skip empty lines
+    [[ -z "$line" ]] && return
+
+    # Skip lines with LOG_FILTER_SKIP matches
+    if [[ -n "$LOG_FILTER_SKIP" ]]; then
+        IFS=',' read -ra FILTER_ITEMS <<< "$LOG_FILTER_SKIP"
+        for item in "${FILTER_ITEMS[@]}"; do
+            [[ "$line" == *"$item"* ]] && return
+        done
+    fi
+
+    # Extract date if present
+    if [[ $line =~ ([0-9]{2}/[0-9]{2}/[0-9]{4}) ]]; then
+        formatted_date="${BASH_REMATCH[1]}"
+        line="${line#*${BASH_REMATCH[0]}}"
+    else
+        formatted_date="$current_date"
+    fi
+
+    # Extract time if present, discard trailing ':'
+    if [[ $line =~ ([0-9]{2}:[0-9]{2}:[0-9]{2})(: )? ]]; then
+        formatted_time="${BASH_REMATCH[1]}"
+        line="${line#*${BASH_REMATCH[0]}}"
+    else
+        formatted_time="$current_time"
+    fi
+
+    # Construct the formatted line
+    local formatted_line="${formatted_date} ${formatted_time} [${filename}]: ${line}"
+    local colored_line=$(colorize "$formatted_line")
+
+    echo -e "$colored_line"
+
+}
+

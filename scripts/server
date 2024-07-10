@@ -1,0 +1,90 @@
+# TODO UDP process monitor https://github.com/lloesche/valheim-server-docker/blob/0996dc3a1fc1f5f88bcbd4056a28254adadb884e/common#L148
+
+server_update () {
+
+    log "Starting server_update.sh"
+
+    # steamcmd.sh ENVs
+    export LD_LIBRARY_PATH="$STEAMCMD_PATH/linux32"
+
+    # only configure box64 if $ARCH contains arm
+    if echo "$ARCH" | grep -q "arm"; then
+        # https://github.com/ptitSeb/box86/blob/master/docs/USAGE.md
+        export BOX86_LOG=1
+        export BOX86_TRACE_FILE=$LOGS/$APP_NAME'_box86.log'
+        export DEBUGGER=box86 
+    fi
+
+    if [ ! -d "$STEAMCMD_PATH/linux64" ]; then \
+        log "$STEAMCMD_PATH directory not complete, presuming first run."
+        $STEAMCMD_PATH/steamcmd.sh +login anonymous +quit | log_stdout
+    fi
+
+    # Update server 
+    # Refference: https://developer.valvesoftware.com/wiki/SteamCMD
+    # TODO Check server version before updating
+    log "SteamCMD begining download of $APP_NAME"
+
+    $STEAMCMD_PATH/steamcmd.sh \
+    +@sSteamCmdForcePlatformType linux \
+    +force_install_dir $APP_FILES \
+    +login anonymous \
+    +app_update 896660 \
+    validate \
+    +quit | log_stdout
+
+}
+
+server_start() {
+
+    # Display server configuration
+    log "+----------------------------------+"
+    log "SERVER_NAME: $SERVER_NAME"
+    log "SERVER_PASS: $SERVER_PASS"
+    log "WORLD_NAME: $WORLD_NAME"
+    log "SERVER_PUBLIC: $SERVER_PUBLIC"
+    log "SERVER_ARGS: $SERVER_ARGS"
+    log "+----------------------------------+"
+    sleep 1
+
+    # Determine command based on architecture
+    if echo "$ARCH" | grep -q "arm"; then
+
+        # Box64 Config, Refference: https://github.com/ptitSeb/box64/blob/main/docs/USAGE.md ,errors: https://github.com/ptitSeb/box64/issues/1182
+        export BOX64_DYNAREC_BLEEDING_EDGE=0
+        export BOX64_DYNAREC_BIGBLOCK=0
+        export BOX64_DYNAREC_STRONGMEM=2
+        export BOX64_LOG=1
+        export BOX64_TRACE_FILE=$LOGS/$APP_NAME'_box64.log'
+        #export BOX64_NOPULSE=1
+
+        COMMAND="box64 $APP_FILES/$APP_EXE"
+        log "Running on $ARCH, starting emulation"
+
+    else
+        COMMAND="$APP_FILES/$APP_EXE"
+    fi
+
+    # $APP_EXE ENV's
+    export LD_LIBRARY_PATH=$APP_FILES/linux64
+    export SteamAppId=892970
+
+    # Execute the server command, reff: https://www.valheimgame.com/support/a-guide-to-dedicated-servers/
+    $COMMAND \
+    -nographics \
+    -batchmode \
+    -name "$SERVER_NAME" \
+    -port 2456 \
+    -public "$SERVER_PUBLIC" \
+    -world "$WORLD_NAME" \
+    -password "$SERVER_PASS" \
+    -savedir "$WORLD_FILES" \
+    -saveinterval 1800 \
+    >> $APP_LOGS/$APP_EXE.log 2>&1 &
+
+    # Track pids
+    sleep 1
+    export APP_PID=$!
+
+    log "Started $COMMAND with PID $APP_PID"
+}
