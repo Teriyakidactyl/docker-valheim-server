@@ -10,6 +10,9 @@ This Docker image provides a customizable Valheim dedicated server, supporting *
 - Automatic server updates
 - Customizable server settings
 - Cross-platform compatibility using Box86/Box64 for ARM systems
+- Colored (even in Portainer), organized logs
+ 
+![Teriyakidactyl Delivers!™](/images/logs.png)
 
 ## Environment Variables
 
