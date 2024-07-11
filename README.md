@@ -42,22 +42,22 @@ docker pull ghcr.io/teriyakidactyl/docker-valheim-server:latest
 2. Run the container:
    
 ```bash
-
-mkdir -p /root/valheim/world  /root/valheim/app
+UR_PATH="/root/valheim"
+mkdir -p $UR_PATH/world  $UR_PATH/app
 
 docker run -d \
 -e SERVER_NAME="My Server" \
--e WORLD_NAME="MyWorld" \
+-e WORLD_NAME="Teriyakolypse" \
 -e SERVER_PASS="secret" \
--v /root/valheim/world:/world \
--v /root/valheim/app:/app \
+-v $UR_PATH/world:/world \
+-v $UR_PATH/app:/app \
 -p 2456-2457:2456-2457/udp \
 --name Valheim-Server \
 ghcr.io/teriyakidactyl/docker-valheim-server:latest
 
 ```
 
-Replace `/path/to/valheim/world` with the path where you want to store your world data.
+Replace `UR_PATH="/root/valheim"` with the path where you want to store your app/world data.
 
 ## Building the Image
 
