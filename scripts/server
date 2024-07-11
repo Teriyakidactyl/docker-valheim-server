@@ -88,3 +88,4 @@ server_start() {
 
     log "Started $COMMAND with PID $APP_PID"
 }
+
