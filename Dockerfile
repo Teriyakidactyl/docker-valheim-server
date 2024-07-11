@@ -17,6 +17,7 @@ FROM debian:bookworm-slim
 
 ARG DEBIAN_FRONTEND=noninteractive \
     TARGETARCH \
+    SOURCE_COMMIT \
     PACKAGES_ARM_STEAMCMD=" \
         # https://packages.debian.org/bookworm/libc6 
         # required for Box86 > steamcmd
