@@ -1,6 +1,6 @@
 
 colorize() {
-    
+
     local line="$1"
     local colored=false
 
