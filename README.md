@@ -63,8 +63,6 @@ To build the image yourself:
 
 ```docker build -t ghcr.io/teriyakidactyl/docker-valheim-server:latest .```
 
-The Dockerfile includes a conditional build stage for ARM architectures, which compiles Box86 and Box64 for compatibility.
-
 ## Healthcheck
 
 The container includes a basic healthcheck that verifies if the Valheim server process is running.
