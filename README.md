@@ -15,7 +15,7 @@ NOTE: ARM is in testing, but seems to work.
 - Automatic server updates via [steamcmd](https://developer.valvesoftware.com/wiki/SteamCMD) (on reboot)
 - Cross-platform compatibility using [Box86](https://github.com/ptitSeb/box86)/[Box64](https://github.com/ptitSeb/box64) for ARM systems
 - Lightweight running only the minimal packages required for stability
-- Colored (even in Portainer), organized logs
+- Colored :rainbow: (even in Portainer), organized logs
 
 ![Teriyakidactyl Delivers!™](/images/logs.png)
 
