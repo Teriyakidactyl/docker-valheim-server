@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  valheim-server:
+    image: ghcr.io/teriyakidactyl/docker-valheim-server:latest
+    container_name: Valheim-Server
+    restart: unless-stopped
+    tty: true
+    cap_add:
+      - sys_nice
+
+    environment:
+      - SERVER_NAME=MyValheimServer
+      - WORLD_NAME=Teriyakolypse
+      - SERVER_PASS=secret
+
+    volumes:
+      - /root/valheim/world:/world
+      - /root/valheim/app:/app
+
+    ports:
+
+      - 2456:2456/udp   # Main UDP Game Port
+      - 2457:2457/udp   # Query Port (**MUST** be +1 from SERVER_PORT)
+
