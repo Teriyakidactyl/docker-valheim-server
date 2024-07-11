@@ -6,8 +6,6 @@ services:
     container_name: Valheim-Server
     restart: unless-stopped
     tty: true
-    cap_add:
-      - sys_nice
 
     environment:
       - SERVER_NAME=MyValheimServer
