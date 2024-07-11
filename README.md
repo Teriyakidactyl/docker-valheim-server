@@ -63,13 +63,12 @@ Replace `UR_PATH="/root/valheim"` with the path where you want to store your app
 
 To build the image yourself:
 
-docker build -t [ghcr.io/teriyakidactyl/docker-valheim-server:latest] .
+```docker build -t ghcr.io/teriyakidactyl/docker-valheim-server:latest .```
 
 The Dockerfile includes a conditional build stage for ARM architectures, which compiles Box86 and Box64 for compatibility.
 
 ## Notes
 
-- The server password must be at least 5 characters long and cannot be part of the server name.
 - For ARM systems, the server uses Box64 to run the x86_64 Valheim server binary.
 - The server runs on ports 2456-2457 UDP.
 
