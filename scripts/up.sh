@@ -6,6 +6,7 @@ export APP_LOGS="$LOGS/$APP_NAME"
 export ARCH=$(dpkg --print-architecture)
 export CONTAINER_START_TIME=$(date -u +%s)
 
+# TODO move $APP_FILES and $WORLD_FILES creation to function, pull from docker.
 
 main() {
     tail_pids=()

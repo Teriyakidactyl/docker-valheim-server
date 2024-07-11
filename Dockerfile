@@ -89,6 +89,7 @@ RUN set -eux; \
     # Set variables
     STEAMCMD_LOGS="/home/$APP_NAME/Steam/logs";\
     APP_LOGS="$LOGS/$APP_NAME" ;\
+    # TODO move $APP_FILES and $WORLD_FILES creation to function, pull from docker.
     DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $STEAMCMD_LOGS $APP_LOGS" ;\
     \
     # Create APP_NAME and set up directories and install steamcmd
