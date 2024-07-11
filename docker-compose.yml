@@ -17,7 +17,6 @@ services:
       - /root/valheim/app:/app
 
     ports:
-
       - 2456:2456/udp   # Main UDP Game Port
       - 2457:2457/udp   # Query Port (**MUST** be +1 from SERVER_PORT)
 
