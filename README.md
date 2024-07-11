@@ -35,17 +35,26 @@ Configure your server using the following environment variables:
 ## Usage
 
 1. Pull the image:
-docker pull [ghcr.io/teriyakidactyl/docker-valheim-server:lateste]
+   
+```docker pull ghcr.io/teriyakidactyl/docker-valheim-server:latest```
 
 2. Run the container:
-docker run -d 
--p 2456-2457:2456-2457/udp 
--e SERVER_NAME="My Server" 
--e WORLD_NAME="MyWorld" 
--e SERVER_PASS="secret" 
--v /path/to/valheim/world:/world 
--v /path/to/valheim/app:/app
-[ghcr.io/teriyakidactyl/docker-valheim-server:latest]
+   
+```
+
+mkdir -p /root/valheim/world  /root/valheim/app
+
+docker run -d \
+-e SERVER_NAME="My Server" \
+-e WORLD_NAME="MyWorld" \
+-e SERVER_PASS="secret" \
+-v /root/valheim/world:/world \
+-v /root/valheim/app:/app \
+-p 2456-2457:2456-2457/udp \
+--name Valheim-Server \
+ghcr.io/teriyakidactyl/docker-valheim-server:latest
+
+```
 
 Replace `/path/to/valheim/world` with the path where you want to store your world data.
 
