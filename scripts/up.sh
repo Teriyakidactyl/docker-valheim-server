@@ -7,6 +7,7 @@ export ARCH=$(dpkg --print-architecture)
 export CONTAINER_START_TIME=$(date -u +%s)
 
 # TODO move $APP_FILES and $WORLD_FILES creation to function, pull from docker.
+# FIXME fix permsission in same function: Error saving world! Access to the path "/world/worlds.db.new" is denied
 
 main() {
     tail_pids=()
