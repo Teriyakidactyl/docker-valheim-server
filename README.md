@@ -11,7 +11,7 @@ This Docker image provides a Valheim dedicated server, supporting **both `amd64`
 - Supports `amd64` and `arm64` architectures
 - Runs under non-root user
 - Automatic server updates via [steamcmd](https://developer.valvesoftware.com/wiki/SteamCMD) (on reboot)
-- Cross-platform compatibility using [Box86](https://github.com/ptitSeb/box86)/[Box64](https://github.com/ptitSeb/box64) for ARM systems
+- Cross-platform compatibility using [Box86](https://github.com/ptitSeb/box86)/[Box64](https://github.com/ptitSeb/box64) for `arm64` systems (tested on [Oracle Ampere](https://www.oracle.com/cloud/compute/arm/))
 - Lightweight running only the minimal packages required for stability
 - Colored :rainbow: (even in Portainer), organized logs
 
