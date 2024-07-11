@@ -1,6 +1,6 @@
 # Docker Valheim Server Images
 
-This Docker image provides a Valheim dedicated server, supporting **both `amd64` and `arm64` architectures.** 
+This Docker image provides a Valheim dedicated server, supporting **both `amd64` and `arm64` (x86, arm) architectures.**
 
 ![Teriyakidactyl Delivers!™](/images/teriyakidactyl_valheim.png)
 
