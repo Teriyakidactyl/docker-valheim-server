@@ -30,7 +30,6 @@ Configure your server using the following environment variables:
 - `SERVER_NAME`: Server name (default: "MyValheimServer")
 - `WORLD_NAME`: World name (default: "DedicatedWorld")
 - `WORLD_FILES`: Directory for world files (default: "/world")
-~~- `SERVER_ARGS`: Enable/disable crossplay (set in your docker-compose or run command)~~
 
 ## Usage
 
@@ -65,14 +64,6 @@ To build the image yourself:
 docker build -t [ghcr.io/teriyakidactyl/docker-valheim-server:latest] .
 
 The Dockerfile includes a conditional build stage for ARM architectures, which compiles Box86 and Box64 for compatibility.
-
-## Scripts
-
-The image includes several scripts to manage the server:
-
-~~- `entrypoint.sh`: The main entry point, sets up the environment and starts the server.~~
-~~- `server_update.sh`: Checks for and applies server updates.~~
-~~- `server_process.sh`: Configures and runs the Valheim server process.~~
 
 ## Notes
 
