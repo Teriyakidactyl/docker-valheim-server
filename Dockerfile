@@ -73,7 +73,7 @@ ENV \
     SERVER_PUBLIC="0" \
     SERVER_PASS="MySecretPassword" \
     SERVER_NAME="MyValheimServer" \
-    WORLD_NAME="DedicatedWorld" \
+    WORLD_NAME="Teriyakolypse" \
     \
     # Log settings   
     LOG_FILTER_SKIP="Shader,shader,Camera,camera,CamZoom,Graphic,graphic,GUI,Gui,HDR,Mesh,null,Null,NULL,Gfx,memorysetup,audioclip,music,vendor"     

@@ -26,9 +26,9 @@ Configure your server using the following environment variables:
 
 - `APP_FILES`: Directory for Valheim server files (default: "/app")
 - `SERVER_PUBLIC`: Set server visibility (default: "0" for private)
-- `SERVER_PASS`: Server password (min. 5 characters, default: "MySecretPassword")
+- `SERVER_PASS`: Server password (default: "MySecretPassword")
 - `SERVER_NAME`: Server name (default: "MyValheimServer")
-- `WORLD_NAME`: World name (default: "DedicatedWorld")
+- `WORLD_NAME`: World name (default: "Teriyakolypse")
 - `WORLD_FILES`: Directory for world files (default: "/world")
 
 ## Usage
