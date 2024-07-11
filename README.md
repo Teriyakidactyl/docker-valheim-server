@@ -35,11 +35,13 @@ Configure your server using the following environment variables:
 
 1. Pull the image:
    
-```docker pull ghcr.io/teriyakidactyl/docker-valheim-server:latest```
+```bash
+docker pull ghcr.io/teriyakidactyl/docker-valheim-server:latest
+```
 
 2. Run the container:
    
-```
+```bash
 
 mkdir -p /root/valheim/world  /root/valheim/app
 
