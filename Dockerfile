@@ -97,9 +97,9 @@ COPY \
     --from=steamcmd \
     --chown=$APP_NAME:$APP_NAME  \
     # Copy user profile
-    # /root/Steam/ /home/$APP_NAME/Steam/ \
+    /root/Steam /home/$APP_NAME/Steam \
     # Copy executables
-    /steamcmd $STEAMCMD_PATH; 
+    /steamcmd $STEAMCMD_PATH 
 
 RUN set -eux; \
     \
