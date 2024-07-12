@@ -1,3 +1,15 @@
+# Stage 1: SteamCMD Install
+FROM debian:bookworm-slim AS steamcmd
+
+# Needs to be in it's own stage, as box86 won't run in qemu during arm phase. Just copy
+ENV STEAMCMD_PATH="/steamcmd"
+
+RUN apt-get update; \
+    apt-get install -y curl lib32gcc1; \
+    mkdir -p $STEAMCMD_PATH; \
+    curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - -C $STEAMCMD_PATH; \
+    $STEAMCMD_PATH/steamcmd.sh +login anonymous +quit
+
 FROM debian:bookworm-slim
 # https://hub.docker.com/_/debian
 
@@ -92,13 +104,18 @@ RUN set -eux; \
     STEAMCMD_LOGS="/home/$APP_NAME/Steam/logs";\
     APP_LOGS="$LOGS/$APP_NAME" ;\
     # TODO move $APP_FILES and $WORLD_FILES creation to function, pull from docker.
-    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $STEAMCMD_LOGS $APP_LOGS" ;\
+    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $APP_LOGS" ;\
     \
-    # Create APP_NAME and set up directories and install steamcmd
+    # Create APP_NAME and set up directories and copy steamcmd
     useradd -m -u $PUID -d /home/$APP_NAME -s /bin/bash $APP_NAME; \
     mkdir -p $DIRECTORIES; \
+    COPY \
+        --from=steamcmd \
+        --chown=$APP_NAME:$APP_NAME  \
+        /root/Steam /home/$APP_NAME/Steam \
+        /steamcmd $STEAMCMD_PATH; \
+        \
     ln -s /home/$APP_NAME/Steam/logs /logs/steamcmd; \
-    curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - -C $STEAMCMD_PATH; \
     chown -R $APP_NAME:$APP_NAME $DIRECTORIES; \    
     chmod 755 $DIRECTORIES; \    
     \

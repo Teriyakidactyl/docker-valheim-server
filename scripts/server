@@ -15,11 +15,8 @@ server_update () {
         export DEBUGGER=box86 
     fi
 
-    if [ ! -d "$STEAMCMD_PATH/linux64" ]; then \
+    if [ ! -d "/home/$APP_NAME/Steam" ]; then \
         log "$STEAMCMD_PATH directory not complete, presuming first run."
-        STEAMCMD_LOGS="/home/$APP_NAME/Steam/logs";\
-        ln -s /home/$APP_NAME/Steam/logs /logs/steamcmd; \
-        curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - -C $STEAMCMD_PATH; \
         $STEAMCMD_PATH/steamcmd.sh +login anonymous +quit | log_stdout
     fi
 
