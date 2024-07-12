@@ -1,5 +1,5 @@
 #!/bin/bash
-source $SCRIPTS/logging_functions
+source $SCRIPTS/valheim_logging_functions
 source $SCRIPTS/valheim_server_functions
 
 export APP_LOGS="$LOGS/$APP_NAME"
