@@ -70,3 +70,35 @@ The container includes a basic healthcheck that verifies if the Valheim server p
 
 For issues, feature requests, or contributions, please use the GitHub issue tracker.
 
+## Docker Image Tags
+
+Our Docker images are tagged using a comprehensive scheme to ensure proper versioning and traceability. The tagging strategy is as follows:
+
+1. **Branch-based tags:**
+   - For the `main` branch: `ghcr.io/teriyakidactyl/docker-valheim-server:main`
+   - For the `dev` branch: `ghcr.io/teriyakidactyl/docker-valheim-server:dev`
+   - For other branches: `ghcr.io/teriyakidactyl/docker-valheim-server:<branch-name>`
+
+2. **Pull Request tags:**
+   - For pull requests: `ghcr.io/teriyakidactyl/docker-valheim-server:pr-<PR-number>`
+
+3. **Semantic Version tags:**
+   - When a git tag with a semantic version is pushed (e.g., v1.2.3):
+     - `ghcr.io/teriyakidactyl/docker-valheim-server:1.2.3`
+     - `ghcr.io/teriyakidactyl/docker-valheim-server:1.2`
+
+4. **Commit SHA tags:**
+   - Each build is also tagged with the full git commit SHA:
+     `ghcr.io/teriyakidactyl/docker-valheim-server:sha-<full-commit-hash>`
+
+This tagging scheme allows for easy identification of images built from specific branches, pull requests, versions, or commits. It supports various use cases, from development and testing to production deployments.
+
+- Use the branch-based tags for ongoing development and staging environments.
+- Use the semantic version tags for production deployments and version tracking.
+- Use the commit SHA tags for precise reproduction of builds or debugging.
+
+The latest build from the `main` branch is always available with the `latest` tag:
+`ghcr.io/teriyakidactyl/docker-valheim-server:latest`
+
+Note: The actual availability of these tags depends on the specific git operations performed (pushes, pull requests, tagging) and the successful completion of the CI/CD pipeline.
+
