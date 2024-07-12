@@ -6,6 +6,8 @@ export APP_LOGS="$LOGS/$APP_NAME"
 export ARCH=$(dpkg --print-architecture)
 export CONTAINER_START_TIME=$(date -u +%s)
 
+# TODO log rotate
+
 # setup_directories() {
 
 #     # TODO doesn't run as root, limited permissions to fix.
@@ -28,7 +30,7 @@ main() {
     trap 'down EXIT' EXIT
 
     check_env
-    setup_directories
+    #setup_directories
     server_update
     server_start
     log_tails
