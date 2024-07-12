@@ -1,5 +1,6 @@
 # Stage 1: SteamCMD Install
 ## Required due to (Buildx qemu) (linux/amd64) > box86 > steamcmd failing in build
+
 FROM --platform=linux/amd64 debian:bookworm-slim AS steamcmd
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -11,6 +12,7 @@ RUN apt-get update; \
     curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - -C $STEAMCMD_PATH; \
     $STEAMCMD_PATH/steamcmd.sh +login anonymous +quit
 
+# Stage 2: Final
 FROM debian:bookworm-slim
 
 # Refferences Links: 
