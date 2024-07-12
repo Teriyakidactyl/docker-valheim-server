@@ -10,11 +10,13 @@ export CONTAINER_START_TIME=$(date -u +%s)
 
 setup_directories() {
 
-    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $STEAMCMD_LOGS $APP_LOGS"
+    DIRECTORIES="$WORLD_FILES $APP_FILES $APP_LOGS $LOGS"
     
+    log "Checking correct folders and permission present: $DIRECTORIES"
+
     mkdir -p $DIRECTORIES
     chmod 755 $DIRECTORIES
-    chown -R "$PUID:$PGID" $DIRECTORIES
+    chown -R "$APP_NAME:$APP_NAME" $DIRECTORIES
 
 }
 
@@ -26,6 +28,7 @@ main() {
     trap 'down EXIT' EXIT
 
     check_env
+    setup_directories
     server_update
     server_start
     log_tails

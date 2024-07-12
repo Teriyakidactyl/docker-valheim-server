@@ -93,7 +93,6 @@ ENV \
     LOG_FILTER_SKIP="Shader,shader,Camera,camera,CamZoom,Graphic,graphic,GUI,Gui,HDR,Mesh,null,Null,NULL,Gfx,memorysetup,audioclip,music,vendor"     
 
 # Set up environment, install BASE_DEPENDENCIES, and configure for different architectures
-
 RUN set -eux; \
     \
     # Update and install common BASE_DEPENDENCIES
@@ -104,9 +103,7 @@ RUN set -eux; \
     # Set variables
     STEAMCMD_PROFILE="/home/$APP_NAME/Steam" ;\
     STEAMCMD_LOGS="$STEAMCMD_PROFILE/logs" ;\
-    APP_LOGS="$LOGS/$APP_NAME" ;\
-    # TODO move $APP_FILES and $WORLD_FILES creation to function, pull from docker.
-    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $APP_LOGS $STEAMCMD_LOGS" ;\
+    DIRECTORIES="$LOGS $STEAMCMD_PATH $STEAMCMD_LOGS" ;\
     \
     # Create APP_NAME and set up directories and copy steamcmd
     useradd -m -u $PUID -d /home/$APP_NAME -s /bin/bash $APP_NAME; \
@@ -160,8 +157,8 @@ COPY scripts $SCRIPTS
 COPY \
     --from=steamcmd \
     --chown=$APP_NAME:$APP_NAME \
-    # Copy user profile
-    /root/Steam $STEAMCMD_PROFILE \
+    # Copy user profile NOTE ommitting due to size
+    # /root/Steam $STEAMCMD_PROFILE \
     # Copy executables
     /steamcmd $STEAMCMD_PATH 
 
