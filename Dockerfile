@@ -93,6 +93,12 @@ ENV \
     LOG_FILTER_SKIP="Shader,shader,Camera,camera,CamZoom,Graphic,graphic,GUI,Gui,HDR,Mesh,null,Null,NULL,Gfx,memorysetup,audioclip,music,vendor"     
 
 # Set up environment, install BASE_DEPENDENCIES, and configure for different architectures
+COPY \
+    --from=steamcmd \
+    --chown=$APP_NAME:$APP_NAME  \
+    /root/Steam /home/$APP_NAME/Steam \
+    /steamcmd $STEAMCMD_PATH; 
+
 RUN set -eux; \
     \
     # Update and install common BASE_DEPENDENCIES
@@ -109,12 +115,6 @@ RUN set -eux; \
     # Create APP_NAME and set up directories and copy steamcmd
     useradd -m -u $PUID -d /home/$APP_NAME -s /bin/bash $APP_NAME; \
     mkdir -p $DIRECTORIES; \
-    COPY \
-        --from=steamcmd \
-        --chown=$APP_NAME:$APP_NAME  \
-        /root/Steam /home/$APP_NAME/Steam \
-        /steamcmd $STEAMCMD_PATH; \
-        \
     ln -s /home/$APP_NAME/Steam/logs /logs/steamcmd; \
     chown -R $APP_NAME:$APP_NAME $DIRECTORIES; \    
     chmod 755 $DIRECTORIES; \    
