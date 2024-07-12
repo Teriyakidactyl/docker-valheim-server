@@ -156,17 +156,14 @@ USER $APP_NAME
 COPY scripts $SCRIPTS
 COPY \
     --from=steamcmd \
-    --chown=$APP_NAME:$APP_NAME \
-    # Copy user profile NOTE ommitting due to size
-    # /root/Steam $STEAMCMD_PROFILE \
-    # Copy executables
+    # Copy user profile (8mb)
+    /root/Steam $STEAMCMD_PROFILE \
+    # Copy executables (300mb)
     /steamcmd $STEAMCMD_PATH 
 
 # https://docs.docker.com/reference/dockerfile/#volume
 VOLUME ["$APP_FILES"]
 VOLUME ["$WORLD_FILES"]
-
-LABEL org.opencontainers.image.source="https://github.com/Teriyakidactyl/docker-valheim-server"
 
 EXPOSE 2456/udp 2457/udp
 

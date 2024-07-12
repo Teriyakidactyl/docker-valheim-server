@@ -6,8 +6,6 @@ export APP_LOGS="$LOGS/$APP_NAME"
 export ARCH=$(dpkg --print-architecture)
 export CONTAINER_START_TIME=$(date -u +%s)
 
-# TODO move $APP_FILES and $WORLD_FILES creation to function, pull from docker.
-
 setup_directories() {
 
     DIRECTORIES="$WORLD_FILES $APP_FILES $APP_LOGS $LOGS"
@@ -19,7 +17,6 @@ setup_directories() {
     chown -R "$APP_NAME:$APP_NAME" $DIRECTORIES
 
 }
-
 
 main() {
     tail_pids=()
