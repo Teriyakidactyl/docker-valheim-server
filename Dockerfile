@@ -59,8 +59,6 @@ ARG DEBIAN_FRONTEND=noninteractive \
     PACKAGES_BASE=" \
         # curl, steamcmd, https://packages.debian.org/bookworm/ca-certificates
         ca-certificates \
-        # housekeeping, https://packages.debian.org/bookworm/logrotate
-        logrotate \
         # timezones, https://packages.debian.org/bookworm/tzdata
         tzdata"
     
