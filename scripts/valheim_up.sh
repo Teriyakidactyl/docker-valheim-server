@@ -73,11 +73,11 @@ check_mhz() {
 check_env() {
 
     if [[ ${#SERVER_PASS} -lt 5 ]]; then
-        log "WARNING - '$SERVER_PASS' too short! Password should be at least 5 characters long."
+        log "WARNING - Password: '$SERVER_PASS' too short! Password should be at least 5 characters long."
     fi
 
     if [[ "$SERVER_NAME" == *"$SERVER_PASS"* ]]; then
-        log "WARNING - '$SERVER_PASS' Password should not be part of the server name."
+        log "WARNING - Password '$SERVER_PASS' should not be part of the server name."
     fi
 
     if [[ "$WORLD_NAME" == *".db"* || "$WORLD_NAME" == *".fwl"* ]]; then
