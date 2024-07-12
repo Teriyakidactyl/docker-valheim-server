@@ -1,5 +1,5 @@
 # Stage 1: SteamCMD Install
-FROM debian:bookworm-slim AS steamcmd
+FROM --platform=linux/amd64 debian:bookworm-slim AS steamcmd
 
 # Needs to be in it's own stage, as box86 won't run in qemu during arm phase. Just copy
 ENV STEAMCMD_PATH="/steamcmd"
