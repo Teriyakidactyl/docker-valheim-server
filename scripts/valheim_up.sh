@@ -11,6 +11,7 @@ export CONTAINER_START_TIME=$(date -u +%s)
 main() {
     tail_pids=()
     trap 'down SIGTERM' SIGTERM
+    trap 'down SIGHUP' SIGHUP
     trap 'down SIGINT' SIGINT
     trap 'down EXIT' EXIT
 
@@ -39,21 +40,6 @@ main() {
     down "(main loop exit)"
 }
 
-check_mhz() {
-
-    # Check device MHz
-    local cpu_mhz=$(awk '/^cpu MHz/ {print $4; exit}' /proc/cpuinfo)
-
-    if [[ "$cpu_mhz" =~ ^[0-9]+(\.[0-9]+)?$ ]] && (( ${cpu_mhz%.*} > 0 )); then
-        log "Found CPU with $cpu_mhz MHz"
-        unset CPU_MHZ
-    else
-        log "Unable to determine CPU Frequency - setting a default of 1.5 GHz so steamcmd won't complain"
-        export CPU_MHZ="1500.000"
-    fi
-
-}
-
 check_env() {
 
     if [[ ${#SERVER_PASS} -lt 5 ]]; then
@@ -71,10 +57,8 @@ check_env() {
 
 uptime() {
 
-    local now=$(date -u +%s)
-    
+    local now=$(date -u +%s)    
     local uptime_seconds=$(( now - CONTAINER_START_TIME ))
-
     local days=$(( uptime_seconds / 86400 ))
     local hours=$(( (uptime_seconds % 86400) / 3600 ))
     local minutes=$(( (uptime_seconds % 3600) / 60 ))
@@ -85,16 +69,46 @@ uptime() {
 }
 
 down() {
-    # TODO how to test this is working?
     local signal_name=$1
-    log "Received $signal_name. Performing cleanup..."
-    log "Stopping tail processes..."
-    kill "${tail_pids[@]}" > /dev/null 2>&1
-    wait "${tail_pids[@]}" > /dev/null 2>&1
-    log "Stopping application process (PID: $APP_PID)..."
-    kill $APP_PID > /dev/null 2>&1
-    wait $APP_PID > /dev/null 2>&1
+    log "Received $signal_name. Initiating graceful shutdown..."
+
+    # Stop tail processes immediately
+    if [ ${#tail_pids[@]} -gt 0 ]; then
+        log "Stopping tail processes..."
+        kill -TERM "${tail_pids[@]}" 2>/dev/null
+    fi
+
+    # Stop main application process
+    if [ -n "$APP_PID" ] && kill -0 "$APP_PID" 2>/dev/null; then
+        log "Stopping application process (PID: $APP_PID)..."
+        kill -TERM "$APP_PID" 2>/dev/null
+        
+        # Wait for the process to terminate, with a 9-second timeout
+        # This leaves 1 second for final cleanup before Docker's 10-second limit
+        local timeout=9
+        for ((i=0; i<timeout; i++)); do
+            if ! kill -0 "$APP_PID" 2>/dev/null; then
+                break
+            fi
+            sleep 1
+        done
+        
+        # If process is still running after timeout, log a warning
+        # Docker will send SIGKILL after its own timeout
+        if kill -0 "$APP_PID" 2>/dev/null; then
+            log "WARNING: Application did not stop within the timeout period. Docker may force termination."
+        fi
+    fi
+
+    # Quick final wait, but don't exceed our adjusted timeout
+    wait -n 1 2>/dev/null
+
+    log "Cleanup complete. Exiting."
     exit 0
+}
+
+cleanup(){
+    # Logrotate    
 }
 
 main

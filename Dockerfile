@@ -38,11 +38,11 @@ FROM debian:bookworm-slim
 ARG DEBIAN_FRONTEND=noninteractive \
     TARGETARCH \
     PACKAGES_ARM_STEAMCMD=" \
-        # required for Box86 > steamcmd
+        # required for Box86 > steamcmd, https://packages.debian.org/bookworm/libc6
         libc6:armhf" \
         \
     PACKAGES_AMD64_STEAMCMD=" \
-        # required for steamcmd
+        # required for steamcmd, https://packages.debian.org/bookworm/lib32gcc-s1-amd64-cross
         lib32gcc-s1" \
         \
     PACKAGES_VALHEIM="" \
@@ -50,7 +50,7 @@ ARG DEBIAN_FRONTEND=noninteractive \
         ## libsdl, libparty, libatomic, libsteam, libpulse
         \
     PACKAGES_ARM_BUILD=" \
-        # repo keyring add
+        # repo keyring add, https://packages.debian.org/bookworm/gnupg
         gnupg" \
         \
     PACKAGES_BASE_BUILD=" \
@@ -59,7 +59,9 @@ ARG DEBIAN_FRONTEND=noninteractive \
     PACKAGES_BASE=" \
         # curl, steamcmd, https://packages.debian.org/bookworm/ca-certificates
         ca-certificates \
-        # timezones
+        # housekeeping, https://packages.debian.org/bookworm/logrotate
+        logrotate \
+        # timezones, https://packages.debian.org/bookworm/tzdata
         tzdata"
     
 ENV \
