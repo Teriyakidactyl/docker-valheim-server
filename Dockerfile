@@ -13,46 +13,37 @@ RUN apt-get update; \
     $STEAMCMD_PATH/steamcmd.sh +login anonymous +quit
 
 FROM debian:bookworm-slim
-# https://hub.docker.com/_/debian
 
+# Refferences Links: 
+# https://hub.docker.com/_/debian
+#
 # Guides
 # https://pimylifeup.com/raspberry-pi-valheim-server/
 # https://community.fydeos.io/t/topic/26128
-
+#
 # Arm Containers
 # https://github.com/Gornius/valheim_box64
 # https://github.com/Arokan13/Raspiheim
-
+#
 # x86 Container
 # https://github.com/lloesche/valheim-server-docker
-
+#
 # ARM Box64 Errors
 # https://github.com/ptitSeb/box64/issues/1182
 
 ARG DEBIAN_FRONTEND=noninteractive \
     TARGETARCH \
     PACKAGES_ARM_STEAMCMD=" \
-        # https://packages.debian.org/bookworm/libc6 
         # required for Box86 > steamcmd
         libc6:armhf" \
         \
     PACKAGES_AMD64_STEAMCMD=" \
-        # https://packages.debian.org/bookworm/lib32gcc-s1 
-        # steamcmd won't run without
+        # required for steamcmd
         lib32gcc-s1" \
         \
     PACKAGES_VALHEIM="" \
-        # https://packages.debian.org/bookworm/libatomic1 runs fine without.
-        # libatomic1 \
-        # https://packages.debian.org/bookworm/libpulse-dev ,runs fine without.
-        # libpulse-dev \
-        \
-        # NOTE the following packages are refferenced in errors on arm64 but seem to run fine without.
-        ## libsdl https://packages.debian.org/search?keywords=libsdl
-        ## libparty
-        ## libatomic https://packages.debian.org/bookworm/libatomic1
-        ## libsteam
-        ## libpulse https://packages.debian.org/bookworm/libpulse0
+        # Guide and error refferenced libraries. Server runs fine without:
+        ## libsdl, libparty, libatomic, libsteam, libpulse
         \
     PACKAGES_ARM_BUILD=" \
         # repo keyring add
@@ -100,7 +91,8 @@ RUN set -eux; \
     # Set local build variables
     STEAMCMD_PROFILE="/home/$APP_NAME/Steam" ;\
     STEAMCMD_LOGS="$STEAMCMD_PROFILE/logs" ;\
-    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $STEAMCMD_LOGS" ;\
+    APP_LOGS="$LOGS/$APP_NAME" ;\
+    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $STEAMCMD_LOGS $APP_LOGS" ;\
     \
     # Create set up $DIRECTORIES
     useradd -m -u $PUID -d /home/$APP_NAME -s /bin/bash $APP_NAME; \

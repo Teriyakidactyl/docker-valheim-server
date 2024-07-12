@@ -28,7 +28,7 @@ main() {
     trap 'down EXIT' EXIT
 
     check_env
-    #setup_directories
+    setup_directories
     server_update
     server_start
     log_tails
