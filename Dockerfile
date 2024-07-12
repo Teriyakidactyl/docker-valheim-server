@@ -97,7 +97,7 @@ RUN set -eux; \
     # Create and set up $DIRECTORIES permissions
     useradd -m -u $PUID -d /home/$APP_NAME -s /bin/bash $APP_NAME; \
     mkdir -p $DIRECTORIES; \
-    ln -s /home/$APP_NAME/Steam/logs /logs/steamcmd; \
+    ln -s /home/$APP_NAME/Steam/logs $LOGS/steamcmd; \
     chown -R $APP_NAME:$APP_NAME $DIRECTORIES; \    
     chmod 755 $DIRECTORIES; \    
     \
