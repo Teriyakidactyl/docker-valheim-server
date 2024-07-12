@@ -93,13 +93,6 @@ ENV \
     LOG_FILTER_SKIP="Shader,shader,Camera,camera,CamZoom,Graphic,graphic,GUI,Gui,HDR,Mesh,null,Null,NULL,Gfx,memorysetup,audioclip,music,vendor"     
 
 # Set up environment, install BASE_DEPENDENCIES, and configure for different architectures
-COPY \
-    --from=steamcmd \
-    --chown=$APP_NAME:$APP_NAME  \
-    # Copy user profile
-    /root/Steam /home/$APP_NAME/Steam \
-    # Copy executables
-    /steamcmd $STEAMCMD_PATH 
 
 RUN set -eux; \
     \
@@ -161,8 +154,15 @@ RUN set -eux; \
 # Change to non-root APP_NAME
 USER $APP_NAME
 
-# Copy scripts after changing APP_NAME
+# Copy scripts after changing to APP_NAME(user)
 COPY scripts $SCRIPTS
+COPY \
+    --from=steamcmd \
+    --chown=$APP_NAME:$APP_NAME \
+    # Copy user profile
+    /root/Steam /home/$APP_NAME/Steam \
+    # Copy executables
+    /steamcmd $STEAMCMD_PATH 
 
 # https://docs.docker.com/reference/dockerfile/#volume
 VOLUME ["$APP_FILES"]
