@@ -6,17 +6,20 @@ export APP_LOGS="$LOGS/$APP_NAME"
 export ARCH=$(dpkg --print-architecture)
 export CONTAINER_START_TIME=$(date -u +%s)
 
-setup_directories() {
+# setup_directories() {
 
-    DIRECTORIES="$WORLD_FILES $APP_FILES $APP_LOGS $LOGS"
+#     # TODO doesn't run as root, limited permissions to fix.
+#     ## Either run as root then switch, or don't have variable directories (current method)
+
+#     DIRECTORIES="$WORLD_FILES $APP_FILES $APP_LOGS $LOGS"
     
-    log "Checking correct folders and permission present: $DIRECTORIES"
+#     log "Checking correct folders and permission present: $DIRECTORIES"
 
-    mkdir -p $DIRECTORIES
-    chmod 755 $DIRECTORIES
-    chown -R "$APP_NAME:$APP_NAME" $DIRECTORIES
+#     mkdir -p $DIRECTORIES
+#     chmod 755 $DIRECTORIES
+#     chown -R "$APP_NAME:$APP_NAME" $DIRECTORIES
 
-}
+# }
 
 main() {
     tail_pids=()
@@ -25,7 +28,7 @@ main() {
     trap 'down EXIT' EXIT
 
     check_env
-    setup_directories
+    #setup_directories
     server_update
     server_start
     log_tails

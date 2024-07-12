@@ -1,8 +1,10 @@
 # Stage 1: SteamCMD Install
 FROM --platform=linux/amd64 debian:bookworm-slim AS steamcmd
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Needs to be in it's own stage, as box86 won't run in qemu during arm phase. Just copy
-ENV STEAMCMD_PATH="/steamcmd"
+# Following this concept: https://packages.debian.org/bookworm/i386/steamcmd/filelist
+ENV STEAMCMD_PATH="/usr/lib/games/steam/steamcmd"
 
 RUN apt-get update; \
     apt-get install -y curl lib32gcc-s1; \
@@ -29,7 +31,6 @@ FROM debian:bookworm-slim
 
 ARG DEBIAN_FRONTEND=noninteractive \
     TARGETARCH \
-    SOURCE_COMMIT \
     PACKAGES_ARM_STEAMCMD=" \
         # https://packages.debian.org/bookworm/libc6 
         # required for Box86 > steamcmd
@@ -63,8 +64,6 @@ ARG DEBIAN_FRONTEND=noninteractive \
     PACKAGES_BASE=" \
         # curl, steamcmd, https://packages.debian.org/bookworm/ca-certificates
         ca-certificates \
-        # https://packages.debian.org/bookworm/python3-minimal
-        # python3-minimal \
         # timezones
         tzdata"
     
@@ -74,14 +73,12 @@ ENV \
     APP_FILES="/app" \
     APP_EXE="valheim_server.x86_64" \
     WORLD_FILES="/world" \
-    STEAMCMD_PATH="/steamcmd" \
+    STEAMCMD_PATH="/usr/lib/games/steam/steamcmd" \
     SCRIPTS="/scripts" \
     LOGS="/logs" \
     PUID=1000 \
     GUID=1000 \
     TERM=xterm-256color \
-    # steamcmd tries en_US.UTF-8
-    LANG=C.UTF-8 \
     \
     # App Variables
     SERVER_PUBLIC="0" \
@@ -100,12 +97,12 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends \
         $PACKAGES_BASE $PACKAGES_BASE_BUILD; \
     \
-    # Set variables
+    # Set local build variables
     STEAMCMD_PROFILE="/home/$APP_NAME/Steam" ;\
     STEAMCMD_LOGS="$STEAMCMD_PROFILE/logs" ;\
-    DIRECTORIES="$LOGS $STEAMCMD_PATH $STEAMCMD_LOGS" ;\
+    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $STEAMCMD_LOGS" ;\
     \
-    # Create APP_NAME and set up directories and copy steamcmd
+    # Create set up $DIRECTORIES
     useradd -m -u $PUID -d /home/$APP_NAME -s /bin/bash $APP_NAME; \
     mkdir -p $DIRECTORIES; \
     ln -s /home/$APP_NAME/Steam/logs /logs/steamcmd; \
@@ -142,7 +139,6 @@ RUN set -eux; \
         apt-get install -y --no-install-recommends \
             $PACKAGES_AMD64_STEAMCMD; \
     fi; \
-    # NOTE it would be great to do a first run of steamcmd here, but it fails on arm64 buildx.
     \
     # Final cleanup
     apt-get clean; \
@@ -159,7 +155,7 @@ COPY \
     # Copy user profile (8mb)
     /root/Steam $STEAMCMD_PROFILE \
     # Copy executables (300mb)
-    /steamcmd $STEAMCMD_PATH 
+    $STEAMCMD_PATH $STEAMCMD_PATH 
 
 # https://docs.docker.com/reference/dockerfile/#volume
 VOLUME ["$APP_FILES"]
