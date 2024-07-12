@@ -5,7 +5,7 @@ FROM debian:bookworm-slim AS steamcmd
 ENV STEAMCMD_PATH="/steamcmd"
 
 RUN apt-get update; \
-    apt-get install -y curl lib32gcc1; \
+    apt-get install -y curl lib32gcc-s1; \
     mkdir -p $STEAMCMD_PATH; \
     curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - -C $STEAMCMD_PATH; \
     $STEAMCMD_PATH/steamcmd.sh +login anonymous +quit
@@ -96,7 +96,9 @@ ENV \
 COPY \
     --from=steamcmd \
     --chown=$APP_NAME:$APP_NAME  \
+    # Copy user profile
     /root/Steam /home/$APP_NAME/Steam \
+    # Copy executables
     /steamcmd $STEAMCMD_PATH; 
 
 RUN set -eux; \
