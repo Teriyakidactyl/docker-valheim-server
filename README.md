@@ -21,12 +21,10 @@ This Docker image provides a Valheim dedicated server, supporting **both `amd64`
 
 Configure your server using the following environment variables:
 
-- `APP_FILES`: Optional directory redirect for Valheim server files (default: `/app`)
 - `SERVER_PUBLIC`: Set server visibility (default: "0" for private)
 - `SERVER_PASS`: Server password (default: "MySecretPassword")
 - `SERVER_NAME`: Server name (default: "MyValheimServer")
 - `WORLD_NAME`: World name (default: "Teriyakolypse")
-- `WORLD_FILES`: Optional directory redirect for world files (default: `/world`)
 
 ## Usage
 
