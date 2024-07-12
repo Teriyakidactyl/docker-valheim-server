@@ -67,8 +67,6 @@ ENV \
     STEAMCMD_PATH="/usr/lib/games/steam/steamcmd" \
     SCRIPTS="/usr/local/bin" \
     LOGS="/var/log" \
-    PUID=1000 \
-    GUID=1000 \
     TERM=xterm-256color \
     \
     # App Variables
@@ -92,6 +90,8 @@ RUN set -eux; \
     STEAMCMD_PROFILE="/home/$APP_NAME/Steam" ;\
     STEAMCMD_LOGS="$STEAMCMD_PROFILE/logs" ;\
     APP_LOGS="$LOGS/$APP_NAME" ;\
+    PUID=1000 \
+    GUID=1000 \
     DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $STEAMCMD_LOGS $APP_LOGS $SCRIPTS" ;\
     \
     # Create and set up $DIRECTORIES permissions
@@ -159,4 +159,4 @@ EXPOSE 2456/udp 2457/udp
 HEALTHCHECK --interval=1m --timeout=3s CMD pidof $APP_EXE || exit 1
 
 ENTRYPOINT ["/bin/bash", "-c"]
-CMD ["$SCRIPTS/up.sh"]
+CMD ["up.sh"]

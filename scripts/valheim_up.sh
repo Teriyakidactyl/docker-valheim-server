@@ -1,6 +1,6 @@
 #!/bin/bash
-source $SCRIPTS/logging
-source $SCRIPTS/server
+source $SCRIPTS/logging_functions
+source $SCRIPTS/valheim_server_functions
 
 export APP_LOGS="$LOGS/$APP_NAME"
 export ARCH=$(dpkg --print-architecture)
@@ -73,11 +73,11 @@ check_mhz() {
 check_env() {
 
     if [[ ${#SERVER_PASS} -lt 5 ]]; then
-        log "WARNING - Password should be at least 5 characters long."
+        log "WARNING - '$SERVER_PASS' too short! Password should be at least 5 characters long."
     fi
 
     if [[ "$SERVER_NAME" == *"$SERVER_PASS"* ]]; then
-        log "WARNING - Password should not be part of the server name."
+        log "WARNING - '$SERVER_PASS' Password should not be part of the server name."
     fi
 
     if [[ "$WORLD_NAME" == *".db"* || "$WORLD_NAME" == *".fwl"* ]]; then
