@@ -1,9 +1,8 @@
 # Stage 1: SteamCMD Install
+## Required due to (Buildx qemu) (linux/amd64) > box86 > steamcmd failing in build
 FROM --platform=linux/amd64 debian:bookworm-slim AS steamcmd
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Needs to be in it's own stage, as box86 won't run in qemu during arm phase. Just copy
-# Following this concept: https://packages.debian.org/bookworm/i386/steamcmd/filelist
 ENV STEAMCMD_PATH="/usr/lib/games/steam/steamcmd"
 
 RUN apt-get update; \
@@ -30,6 +29,9 @@ FROM debian:bookworm-slim
 #
 # ARM Box64 Errors
 # https://github.com/ptitSeb/box64/issues/1182
+#
+# SteamCMD Paths schema:
+# https://packages.debian.org/bookworm/i386/steamcmd/filelist
 
 ARG DEBIAN_FRONTEND=noninteractive \
     TARGETARCH \
