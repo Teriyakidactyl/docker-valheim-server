@@ -1,4 +1,6 @@
 name: Build Docker Images
+
+# Defines when the workflow should run
 on:
   push:
     branches:
@@ -8,20 +10,23 @@ on:
     branches:
       - dev
       - main
-  workflow_dispatch:
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   build:
     name: Build Docker Images
     runs-on: ubuntu-latest
     steps:
+      # Check out the repository code
       - name: Check out repository
         uses: actions/checkout@v2
 
+      # Set up Docker Buildx for multi-architecture builds
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
 
+      # Cache Docker layers to speed up subsequent builds
       - name: Cache Docker layers
         uses: actions/cache@v2.1.4
         with:
@@ -30,6 +35,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
+      # Log in to GitHub Container Registry (only for pushes, not PRs)
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
@@ -38,6 +44,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
+      # Generate metadata for Docker image, including tags
       - name: Generate Docker metadata
         id: meta
         uses: docker/metadata-action@v4
@@ -49,28 +56,39 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,format=long
+          labels: |
+            org.opencontainers.image.title=Valheim Server
+            org.opencontainers.image.description=Docker image for Valheim dedicated server
+            org.opencontainers.image.vendor=TeriyakiDactyl
+            org.opencontainers.image.version={{version}}
+            org.opencontainers.image.created={{date 'yyyy-MM-dd'}}
+            org.opencontainers.image.revision={{sha}}
+            com.example.git.branch={{branch}}
 
+      # Prepare additional build arguments
       - name: Prepare build arguments
         id: prep
         run: |
           echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
+      # Build and push the Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
+          platforms: linux/amd64,linux/arm64  # Multi-architecture build
+          push: ${{ github.event_name != 'pull_request' }}  # Only push on non-PR events
+          tags: ${{ steps.meta.outputs.tags }}  # Use generated tags
+          labels: ${{ steps.meta.outputs.labels }}  # Use generated labels
+          build-args: |  # Pass build arguments to Dockerfile
             SOURCE_COMMIT=${{ github.sha }}
             BUILD_DATE=${{ steps.prep.outputs.build_date }}
             BRANCH_NAME=${{ github.ref_name }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          cache-from: type=local,src=/tmp/.buildx-cache  # Use cached layers
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max  # Update cache
 
+      # Move cache (Temporary fix for cache handling)
       - name: Move cache (Temporary fix)
         run: |
           rm -rf /tmp/.buildx-cache
