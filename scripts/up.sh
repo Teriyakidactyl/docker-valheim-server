@@ -8,6 +8,17 @@ export CONTAINER_START_TIME=$(date -u +%s)
 
 # TODO move $APP_FILES and $WORLD_FILES creation to function, pull from docker.
 
+setup_directories() {
+
+    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $STEAMCMD_LOGS $APP_LOGS"
+    
+    mkdir -p $DIRECTORIES
+    chmod 755 $DIRECTORIES
+    chown -R "$PUID:$PGID" $DIRECTORIES
+
+}
+
+
 main() {
     tail_pids=()
     trap 'down SIGTERM' SIGTERM

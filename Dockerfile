@@ -65,6 +65,8 @@ ENV \
     STEAMCMD_PATH="/steamcmd" \
     SCRIPTS="/scripts" \
     LOGS="/logs" \
+    PUID=1000 \
+    GUID=1000 \
     TERM=xterm-256color \
     # steamcmd tries en_US.UTF-8
     LANG=C.UTF-8 \
@@ -93,7 +95,7 @@ RUN set -eux; \
     DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $STEAMCMD_LOGS $APP_LOGS" ;\
     \
     # Create APP_NAME and set up directories and install steamcmd
-    useradd -m -u 1000 -d /home/$APP_NAME -s /bin/bash $APP_NAME; \
+    useradd -m -u $PUID -d /home/$APP_NAME -s /bin/bash $APP_NAME; \
     mkdir -p $DIRECTORIES; \
     ln -s /home/$APP_NAME/Steam/logs /logs/steamcmd; \
     curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf - -C $STEAMCMD_PATH; \
