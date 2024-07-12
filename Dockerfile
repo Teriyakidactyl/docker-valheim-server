@@ -65,8 +65,8 @@ ENV \
     APP_EXE="valheim_server.x86_64" \
     WORLD_FILES="/world" \
     STEAMCMD_PATH="/usr/lib/games/steam/steamcmd" \
-    SCRIPTS="/scripts" \
-    LOGS="/logs" \
+    SCRIPTS="/usr/local/bin" \
+    LOGS="/var/log" \
     PUID=1000 \
     GUID=1000 \
     TERM=xterm-256color \
@@ -92,9 +92,9 @@ RUN set -eux; \
     STEAMCMD_PROFILE="/home/$APP_NAME/Steam" ;\
     STEAMCMD_LOGS="$STEAMCMD_PROFILE/logs" ;\
     APP_LOGS="$LOGS/$APP_NAME" ;\
-    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $STEAMCMD_LOGS $APP_LOGS" ;\
+    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $STEAMCMD_LOGS $APP_LOGS $SCRIPTS" ;\
     \
-    # Create set up $DIRECTORIES
+    # Create and set up $DIRECTORIES permissions
     useradd -m -u $PUID -d /home/$APP_NAME -s /bin/bash $APP_NAME; \
     mkdir -p $DIRECTORIES; \
     ln -s /home/$APP_NAME/Steam/logs /logs/steamcmd; \
