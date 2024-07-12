@@ -141,9 +141,10 @@ RUN set -eux; \
 USER $APP_NAME
 
 # Copy scripts after changing to APP_NAME(user)
-COPY scripts $SCRIPTS
+COPY --chown=$APP_NAME:$APP_NAME scripts $SCRIPTS
 COPY \
     --from=steamcmd \
+    --chown=$APP_NAME:$APP_NAME \
     # Copy user profile (8mb)
     /root/Steam $STEAMCMD_PROFILE \
     # Copy executables (300mb)
