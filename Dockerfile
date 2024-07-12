@@ -102,7 +102,8 @@ RUN set -eux; \
         $PACKAGES_BASE $PACKAGES_BASE_BUILD; \
     \
     # Set variables
-    STEAMCMD_LOGS="/home/$APP_NAME/Steam/logs";\
+    STEAMCMD_PROFILE="/home/$APP_NAME/Steam" ;\
+    STEAMCMD_LOGS="$STEAMCMD_PROFILE/logs" ;\
     APP_LOGS="$LOGS/$APP_NAME" ;\
     # TODO move $APP_FILES and $WORLD_FILES creation to function, pull from docker.
     DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $APP_LOGS $STEAMCMD_LOGS" ;\
@@ -160,7 +161,7 @@ COPY \
     --from=steamcmd \
     --chown=$APP_NAME:$APP_NAME \
     # Copy user profile
-    /root/Steam /home/$APP_NAME/Steam \
+    /root/Steam $STEAMCMD_PROFILE \
     # Copy executables
     /steamcmd $STEAMCMD_PATH 
 
