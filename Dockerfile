@@ -112,7 +112,7 @@ RUN set -eux; \
     STEAMCMD_LOGS="/home/$APP_NAME/Steam/logs";\
     APP_LOGS="$LOGS/$APP_NAME" ;\
     # TODO move $APP_FILES and $WORLD_FILES creation to function, pull from docker.
-    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $APP_LOGS" ;\
+    DIRECTORIES="$WORLD_FILES $APP_FILES $LOGS $STEAMCMD_PATH $APP_LOGS $STEAMCMD_LOGS" ;\
     \
     # Create APP_NAME and set up directories and copy steamcmd
     useradd -m -u $PUID -d /home/$APP_NAME -s /bin/bash $APP_NAME; \
