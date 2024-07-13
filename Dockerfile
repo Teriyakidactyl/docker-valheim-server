@@ -79,7 +79,8 @@ ENV \
     SERVER_NAME="MyValheimServer" \
     WORLD_NAME="Teriyakolypse" \
     \
-    # Log settings   
+    # Log settings 
+    # TODO move to file, get more comprehensive.   
     LOG_FILTER_SKIP="Shader,shader,Camera,camera,CamZoom,Graphic,graphic,GUI,Gui,HDR,Mesh,null,Null,NULL,Gfx,memorysetup,audioclip,music,vendor"     
 
 # Set up environment, install BASE_DEPENDENCIES, and configure for different architectures

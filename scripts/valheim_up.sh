@@ -11,12 +11,11 @@ export CONTAINER_START_TIME=$(date -u +%s)
 main() {
     tail_pids=()
     trap 'down SIGTERM' SIGTERM
-    trap 'down SIGHUP' SIGHUP
     trap 'down SIGINT' SIGINT
     trap 'down EXIT' EXIT
 
     check_env
-    cleanup
+    log_clean
     server_update
     server_start
     log_tails
@@ -106,59 +105,6 @@ down() {
 
     log "Cleanup complete. Exiting."
     exit 0
-}
-
-cleanup() {
-    log "Starting log cleanup process..."
-
-    # Log rotation
-    for logfile in "$LOGS"/*.log; do
-        if [ -f "$logfile" ]; then
-            base_name=$(basename "$logfile" .log)
-            log "Processing log file: $base_name"
-           
-            # Rotate existing old logs
-            for i in {7..1}; do
-                j=$((i+1))
-                if [ -f "${logfile}.${i}" ]; then
-                    log "  Rotating ${base_name}.log.${i} to ${base_name}.log.${j}"
-                    mv "${logfile}.${i}" "${logfile}.${j}"
-                fi
-            done
-           
-            # Compress logs older than 1 day
-            for old_log in "${logfile}".[2-7]; do
-                if [ -f "$old_log" ] && [ ! -f "${old_log}.gz" ]; then
-                    log "  Compressing $old_log"
-                    gzip "$old_log"
-                fi
-            done
-           
-            # Rotate current log
-            if [ -s "$logfile" ]; then
-                log "  Rotating current log $base_name.log to ${base_name}.log.1"
-                mv "$logfile" "${logfile}.1"
-                touch "$logfile"
-                chown $APP_NAME:$APP_NAME "$logfile"
-                chmod 644 "$logfile"
-                log "  Created new empty log file: $base_name.log"
-            else
-                log "  Current log $base_name.log is empty, skipping rotation"
-            fi
-        fi
-    done
-
-    log "Cleaning up old rotated logs..."
-    old_logs=$(find "$LOGS" -name "*.log.*" -mtime +7)
-    if [ -n "$old_logs" ]; then
-        log "  Deleting the following old logs:"
-        log "$old_logs"
-        find "$LOGS" -name "*.log.*" -mtime +7 -delete
-    else
-        log "  No old logs to delete"
-    fi
-
-    log "Log cleanup process completed"
 }
 
 main

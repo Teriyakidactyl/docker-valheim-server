@@ -16,6 +16,7 @@ colorize() {
     local NC=$(tput sgr0) # Reset all attributes
 
     # Define color rules (regex -> color)
+    # TODO move to file, get more comprehensive. 
     local -A line_rules=(
         ["(Shader|HDR|shader|WARNING|Unloading|Total:|UnloadTime|Camera|Null|null|NULL)"]="$WHITE"
         ["(Valheim l-.*|Load world:.*|isModded:.*|Am I Host\?|version|world)"]="$YELLOW"
@@ -130,4 +131,20 @@ log() {
 
     echo -e "$colored_line"
 
+}
+
+log_clean() {
+    log "Starting log cleanup process..."
+
+    # Define the number of days for gzip and deletion
+    days_to_gzip=2
+    days_to_delete=$((days_to_gzip * 2))
+
+    # Gzip logs older than days_to_gzip
+    find "$LOGS" -name "*.log" -type f -mtime +$days_to_gzip ! -name "*.gz" -exec gzip {} \;
+
+    # Delete gzipped logs older than days_to_delete
+    find "$LOGS" -name "*.gz" -mtime +$days_to_delete -delete
+
+    log "Log cleanup process completed"
 }
