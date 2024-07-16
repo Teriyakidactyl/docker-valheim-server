@@ -24,6 +24,7 @@ Configure your server using the following environment variables:
 - `SERVER_PUBLIC`: Set server visibility (default: "0" for private)
 - `SERVER_PASS`: Server password (default: "MySecretPassword")
 - `SERVER_NAME`: Server name (default: "MyValheimServer")
+- `SERVER_ALLOW_LIST`: List of [SteamID64](https://www.steamidfinder.com/) strings to indicate allowed players (default: empty, allow-all).  
 - `WORLD_NAME`: World name (default: "Teriyakolypse")
 
 ## Usage

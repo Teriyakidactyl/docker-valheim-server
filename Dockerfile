@@ -69,6 +69,7 @@ ENV \
     APP_EXE="valheim_server.x86_64" \
     WORLD_FILES="/world" \
     STEAMCMD_PATH="/usr/lib/games/steam/steamcmd" \
+
     SCRIPTS="/usr/local/bin" \
     LOGS="/var/log" \
     TERM=xterm-256color \
@@ -82,6 +83,10 @@ ENV \
     # Log settings 
     # TODO move to file, get more comprehensive.   
     LOG_FILTER_SKIP="Shader,shader,Camera,camera,CamZoom,Graphic,graphic,GUI,Gui,HDR,Mesh,null,Null,NULL,Gfx,memorysetup,audioclip,music,vendor"     
+
+ENV \
+    # Derviative VARS
+    STEAM_ALLOW_LIST_PATH="$WORLD_FILES/permittedlist.txt" 
 
 # Set up environment, install BASE_DEPENDENCIES, and configure for different architectures
 RUN set -eux; \

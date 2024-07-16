@@ -17,6 +17,7 @@ main() {
     check_env
     log_clean
     server_update
+    check_whitelist
     server_start
     log_tails
 
