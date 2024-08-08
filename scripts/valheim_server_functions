@@ -1,4 +1,5 @@
 # TODO UDP process monitor https://github.com/lloesche/valheim-server-docker/blob/0996dc3a1fc1f5f88bcbd4056a28254adadb884e/common#L148
+# TODO Add restart interval and ENV support
 
 server_update () {
 
