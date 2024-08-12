@@ -150,6 +150,8 @@ RUN set -eux; \
 # Change to non-root APP_NAME
 USER $APP_NAME
 
+# TODO Label with Box64, Box86 Versions
+
 # Copy scripts after changing to APP_NAME(user)
 COPY --chown=$APP_NAME:$APP_NAME scripts $SCRIPTS
 COPY \
