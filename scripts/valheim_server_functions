@@ -38,7 +38,7 @@ server_update () {
 
 check_whitelist() {
     if [ -n "$SERVER_ALLOW_LIST" ]; then
-        update_config_element "EnableWhitelist" "True"
+        # TODO update_config_element "EnableWhitelist" "True"
         
         # Remove existing whitelist file if it exists
         if [ -f "$STEAM_ALLOW_LIST_PATH" ]; then
