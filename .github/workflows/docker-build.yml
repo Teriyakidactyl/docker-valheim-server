@@ -28,7 +28,7 @@ jobs:
 
       # Cache Docker layers to speed up subsequent builds
       - name: Cache Docker layers
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
