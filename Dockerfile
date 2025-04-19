@@ -60,4 +60,4 @@ EXPOSE 2456/udp 2457/udp
 HEALTHCHECK --interval=1m --timeout=3s CMD pidof $APP_EXE || exit 1
 
 # Use the base image's up.sh script to start the server
-CMD ["up.sh"]
+CMD ["$SCRIPTS/up.sh"]
