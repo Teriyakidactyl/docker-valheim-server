@@ -37,8 +37,6 @@ env:
   MATRIX_BASE_TAGS: |
     bookworm
     trixie
-    bookworm-wine-staging
-    trixie-wine-staging
 
   # Target platforms
   MATRIX_PLATFORMS: |
@@ -263,4 +261,3 @@ jobs:
         run: |
           echo "::notice::Workflow completed with status: ${{ steps.status.outputs.status }}"
           echo "::notice::${{ steps.status.outputs.message }}"
-          
