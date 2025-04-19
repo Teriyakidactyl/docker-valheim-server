@@ -57,8 +57,16 @@ jobs:
         run: |
           # Process the multiline env vars into JSON arrays for matrix strategy
           # Remove empty lines, add quotes, convert to JSON array
-          echo "base-tags=$(echo '${{ env.MATRIX_BASE_TAGS }}' | grep -v '^$' | awk '{print "\""$0"\""}' | paste -sd, | awk '{print "["$0"]"}')" >> $GITHUB_OUTPUT
-          echo "platforms=$(echo '${{ env.MATRIX_PLATFORMS }}' | grep -v '^$' | awk '{print "\""$0"\""}' | paste -sd, | awk '{print "["$0"]"}')" >> $GITHUB_OUTPUT
+          BASE_TAGS=$(echo '${{ env.MATRIX_BASE_TAGS }}' | grep -v '^$' | awk '{print "\""$0"\""}' | paste -sd, | awk '{print "["$0"]"}')
+          PLATFORMS=$(echo '${{ env.MATRIX_PLATFORMS }}' | grep -v '^$' | awk '{print "\""$0"\""}' | paste -sd, | awk '{print "["$0"]"}')
+          
+          # Echo the values for debugging
+          echo "Generated base-tags: $BASE_TAGS"
+          echo "Generated platforms: $PLATFORMS"
+          
+          # Set the outputs
+          echo "base-tags=$BASE_TAGS" >> $GITHUB_OUTPUT
+          echo "platforms=$PLATFORMS" >> $GITHUB_OUTPUT
 
   # Build job that creates individual architecture-specific images
   build:
@@ -183,7 +191,7 @@ jobs:
 
   # Create multi-architecture manifests
   create-manifest:
-    needs: build
+    needs: [setup, build]  # Add setup as a dependency to access its outputs
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: github.event_name != 'pull_request'
@@ -192,6 +200,11 @@ jobs:
         base_tag: ${{ fromJson(needs.setup.outputs.base-tags) }}
     
     steps:
+      # Add a debug step to verify the outputs
+      - name: Debug job outputs
+        run: |
+          echo "setup.outputs.base-tags: '${{ needs.setup.outputs.base-tags }}'"
+          
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -261,3 +274,4 @@ jobs:
         run: |
           echo "::notice::Workflow completed with status: ${{ steps.status.outputs.status }}"
           echo "::notice::${{ steps.status.outputs.message }}"
+          
