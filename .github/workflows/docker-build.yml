@@ -117,34 +117,27 @@ jobs:
           BASE_TAG="${{ matrix.base_tag }}-$ARCHITECTURE"
           echo "BASE_TAG=$BASE_TAG" >> $GITHUB_ENV
           
-          # Generate tags for this build based on base image tag
+          # Generate tag parts (without registry path) for this build
           # For normal builds (main branch)
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             # Versioned tag (includes base image tag)
-            echo "VERSIONED_TAG=${{ env.REGISTRY_IMAGE }}:${{ matrix.base_tag }}-$ARCHITECTURE" >> $GITHUB_ENV
+            echo "VERSIONED_TAG=${{ matrix.base_tag }}-$ARCHITECTURE" >> $GITHUB_ENV
             
             # Latest tag per architecture (if using the default base tag, typically 'bookworm')
             if [[ "${{ matrix.base_tag }}" == "bookworm" ]]; then
-              echo "LATEST_ARCH_TAG=${{ env.REGISTRY_IMAGE }}:latest-$ARCHITECTURE" >> $GITHUB_ENV
+              echo "LATEST_ARCH_TAG=latest-$ARCHITECTURE" >> $GITHUB_ENV
             else
               echo "LATEST_ARCH_TAG=" >> $GITHUB_ENV
             fi
           else
             # For dev branch, add _dev suffix
-            echo "VERSIONED_TAG=${{ env.REGISTRY_IMAGE }}:${{ matrix.base_tag }}_dev-$ARCHITECTURE" >> $GITHUB_ENV
+            echo "VERSIONED_TAG=${{ matrix.base_tag }}_dev-$ARCHITECTURE" >> $GITHUB_ENV
             echo "LATEST_ARCH_TAG=" >> $GITHUB_ENV
           fi
           
           # Branch tag
           BRANCH_TAG="${{ github.ref_name }}-$ARCHITECTURE"
           echo "BRANCH_TAG=$BRANCH_TAG" >> $GITHUB_ENV
-          
-          # Generate the full list of tags
-          TAGS="${{ env.REGISTRY_IMAGE }}:$BRANCH_TAG,${{ env.VERSIONED_TAG }}"
-          if [[ -n "${{ env.LATEST_ARCH_TAG }}" ]]; then
-            TAGS="$TAGS,${{ env.LATEST_ARCH_TAG }}"
-          fi
-          echo "TAGS=$TAGS" >> $GITHUB_ENV
           
           # Set build date for metadata
           echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
@@ -188,61 +181,6 @@ jobs:
             type=gha,scope=${{ matrix.base_tag }}-${{ matrix.platform }}
           cache-to: |
             type=gha,scope=${{ matrix.base_tag }}-${{ matrix.platform }},mode=max
-      
-      # Verify images were pushed successfully
-      - name: Verify image push
-        if: github.event_name != 'pull_request'
-        run: |
-          echo "Verifying image was pushed successfully..."
-          # Extract tag without platform prefix for manifest check
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            TAG="${{ matrix.base_tag }}-${{ env.ARCHITECTURE }}"
-          else
-            TAG="${{ matrix.base_tag }}_dev-${{ env.ARCHITECTURE }}"
-          fi
-          
-          IMAGE_NAME="${{ env.REGISTRY_IMAGE }}:${TAG}"
-          echo "Checking for image: $IMAGE_NAME"
-          
-          # Wait a moment for registry to process the push
-          echo "Waiting for 10 seconds to allow registry to process the push..."
-          sleep 10
-          
-          # Attempt to inspect the image
-          if docker buildx imagetools inspect "$IMAGE_NAME" > /dev/null 2>&1; then
-            echo "✅ Image $IMAGE_NAME was pushed successfully!"
-          else
-            echo "❌ Failed to verify image $IMAGE_NAME was pushed."
-            echo "This could be due to Docker registry caching or permissions issues."
-            echo "::warning::Could not verify image $IMAGE_NAME was pushed, but continuing workflow."
-          fi
-      
-      # Log summary of build job
-      - name: Build job summary
-        if: always()
-        run: |
-          echo "## Build Job Summary for ${{ matrix.base_tag }} on ${{ matrix.platform }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Base Tag:** ${{ matrix.base_tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Platform:** ${{ matrix.platform }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Architecture:** ${{ env.ARCHITECTURE }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch Tag:** ${{ env.BRANCH_TAG }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Versioned Tag:** ${{ env.VERSIONED_TAG }}" >> $GITHUB_STEP_SUMMARY
-          
-          if [[ -n "${{ env.LATEST_ARCH_TAG }}" ]]; then
-            echo "- **Latest Arch Tag:** ${{ env.LATEST_ARCH_TAG }}" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Build Status" >> $GITHUB_STEP_SUMMARY
-          
-          if [[ "${{ steps.docker_build.outcome }}" == "success" ]]; then
-            echo "✅ Build successful" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
 
   # Create multi-architecture manifests
   create-manifest:
@@ -259,20 +197,6 @@ jobs:
       - name: Debug job outputs
         run: |
           echo "setup.outputs.base-tags: '${{ needs.setup.outputs.base-tags }}'"
-          echo "Running matrix with base_tag: ${{ matrix.base_tag }}"
-          
-          # Debug GitHub ref
-          echo "GitHub ref: ${{ github.ref }}"
-          echo "GitHub ref_name: ${{ github.ref_name }}"
-          
-          # Debug workflow environment
-          echo "Registry image: ${{ env.REGISTRY_IMAGE }}"
-      
-      # Wait before starting manifest creation to ensure images are available
-      - name: Wait for registry propagation
-        run: |
-          echo "Waiting 30 seconds for registry propagation..."
-          sleep 30
           
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -281,135 +205,44 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
           
-      # Check image availability before creating manifests
-      - name: Check image availability
-        id: check-images
-        run: |
-          # Determine image tags based on branch
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            AMD64_TAG="${{ matrix.base_tag }}-amd64"
-            ARM64_TAG="${{ matrix.base_tag }}-arm64"
-          else
-            AMD64_TAG="${{ matrix.base_tag }}_dev-amd64"
-            ARM64_TAG="${{ matrix.base_tag }}_dev-arm64"
-          fi
-          
-          AMD64_IMAGE="${{ env.REGISTRY_IMAGE }}:${AMD64_TAG}"
-          ARM64_IMAGE="${{ env.REGISTRY_IMAGE }}:${ARM64_TAG}"
-          
-          echo "Checking for AMD64 image: $AMD64_IMAGE"
-          echo "Checking for ARM64 image: $ARM64_IMAGE"
-          
-          # Try to list all available tags for this repository
-          echo "Available tags in the registry:"
-          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }} || echo "No tags found or could not list tags."
-          
-          # Check if images exist
-          AMD64_EXISTS="false"
-          ARM64_EXISTS="false"
-          
-          if docker buildx imagetools inspect "$AMD64_IMAGE" > /dev/null 2>&1; then
-            echo "✅ AMD64 image exists: $AMD64_IMAGE"
-            AMD64_EXISTS="true"
-          else
-            echo "❌ AMD64 image not found: $AMD64_IMAGE"
-          fi
-          
-          if docker buildx imagetools inspect "$ARM64_IMAGE" > /dev/null 2>&1; then
-            echo "✅ ARM64 image exists: $ARM64_IMAGE"
-            ARM64_EXISTS="true"
-          else
-            echo "❌ ARM64 image not found: $ARM64_IMAGE"
-          fi
-          
-          # Set output for next steps
-          echo "amd64_exists=$AMD64_EXISTS" >> $GITHUB_OUTPUT
-          echo "arm64_exists=$ARM64_EXISTS" >> $GITHUB_OUTPUT
-          echo "amd64_image=$AMD64_IMAGE" >> $GITHUB_OUTPUT
-          echo "arm64_image=$ARM64_IMAGE" >> $GITHUB_OUTPUT
-          
       - name: Generate manifest tag names
         id: manifest-tags
         run: |
-          # Generate manifest tag name
+          # Generate manifest tag name without registry path
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             # For main branch
-            echo "MANIFEST_TAG=${{ env.REGISTRY_IMAGE }}:${{ matrix.base_tag }}" >> $GITHUB_ENV
+            echo "MANIFEST_TAG=${{ matrix.base_tag }}" >> $GITHUB_ENV
             
             # Set latest tag if this is the default base tag (typically 'bookworm')
             if [[ "${{ matrix.base_tag }}" == "bookworm" ]]; then
-              echo "LATEST_TAG=${{ env.REGISTRY_IMAGE }}:latest" >> $GITHUB_ENV
+              echo "LATEST_TAG=latest" >> $GITHUB_ENV
               echo "HAS_LATEST_TAG=true" >> $GITHUB_ENV
             else
               echo "HAS_LATEST_TAG=false" >> $GITHUB_ENV
             fi
           else
             # For dev branch, add _dev suffix
-            echo "MANIFEST_TAG=${{ env.REGISTRY_IMAGE }}:${{ matrix.base_tag }}_dev" >> $GITHUB_ENV
+            echo "MANIFEST_TAG=${{ matrix.base_tag }}_dev" >> $GITHUB_ENV
             echo "HAS_LATEST_TAG=false" >> $GITHUB_ENV
           fi
-          
-          echo "Will create manifest with tag: ${{ env.MANIFEST_TAG }}"
       
       # Create and push multi-architecture manifests using buildx imagetools
       - name: Create and push multi-architecture manifests
-        id: create-manifest
-        continue-on-error: true
-        if: steps.check-images.outputs.amd64_exists == 'true' && steps.check-images.outputs.arm64_exists == 'true'
         run: |
-          echo "Both architecture images found, creating manifest..."
-          
           # Create manifest tag
-          docker buildx imagetools create --tag ${{ env.MANIFEST_TAG }} \
-            ${{ steps.check-images.outputs.amd64_image }} \
-            ${{ steps.check-images.outputs.arm64_image }}
+          docker buildx imagetools create --tag ${{ env.REGISTRY_IMAGE }}:${{ env.MANIFEST_TAG }} \
+            ${{ env.REGISTRY_IMAGE }}:${{ matrix.base_tag }}${{ github.ref == 'refs/heads/main' && '' || '_dev' }}-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ matrix.base_tag }}${{ github.ref == 'refs/heads/main' && '' || '_dev' }}-arm64
           
-          echo "::notice::Successfully created manifest for ${{ env.MANIFEST_TAG }}"
+          echo "::notice::Successfully created manifest for ${{ env.REGISTRY_IMAGE }}:${{ env.MANIFEST_TAG }}"
           
           # Create latest tag if applicable
           if [[ "${{ env.HAS_LATEST_TAG }}" == "true" ]]; then
-            if docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:latest-amd64 > /dev/null 2>&1 && docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:latest-arm64 > /dev/null 2>&1; then
-              docker buildx imagetools create --tag ${{ env.LATEST_TAG }} \
-                ${{ env.REGISTRY_IMAGE }}:latest-amd64 \
-                ${{ env.REGISTRY_IMAGE }}:latest-arm64
-                
-              echo "::notice::Successfully created 'latest' multi-architecture manifest"
-            else
-              echo "::warning::Skipping 'latest' manifest creation, latest architecture images not found"
-            fi
-          fi
-      
-      # Handle case where images are missing
-      - name: Handle missing images
-        if: steps.check-images.outputs.amd64_exists != 'true' || steps.check-images.outputs.arm64_exists != 'true'
-        run: |
-          echo "::error::Cannot create manifest because one or both architecture images are missing."
-          echo "::error::AMD64 image exists: ${{ steps.check-images.outputs.amd64_exists }}"
-          echo "::error::ARM64 image exists: ${{ steps.check-images.outputs.arm64_exists }}"
-          exit 1
-      
-      # Create job summary
-      - name: Manifest creation summary
-        if: always()
-        run: |
-          echo "## Manifest Creation Summary for ${{ matrix.base_tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Manifest Tag:** ${{ env.MANIFEST_TAG }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **AMD64 Image:** ${{ steps.check-images.outputs.amd64_image }} (Found: ${{ steps.check-images.outputs.amd64_exists }})" >> $GITHUB_STEP_SUMMARY
-          echo "- **ARM64 Image:** ${{ steps.check-images.outputs.arm64_image }} (Found: ${{ steps.check-images.outputs.arm64_exists }})" >> $GITHUB_STEP_SUMMARY
-          
-          if [[ "${{ steps.check-images.outputs.amd64_exists }}" == "true" && "${{ steps.check-images.outputs.arm64_exists }}" == "true" ]]; then
-            if [[ "${{ steps.create-manifest.outcome }}" == "success" ]]; then
-              echo "- **Status:** ✅ Successfully created multi-architecture manifest" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "- **Status:** ❌ Failed to create manifest despite images being available" >> $GITHUB_STEP_SUMMARY
-            fi
-          else
-            echo "- **Status:** ❌ Could not create manifest because images were missing" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [[ "${{ env.HAS_LATEST_TAG }}" == "true" ]]; then
-            echo "- **Latest Tag:** ${{ env.LATEST_TAG }}" >> $GITHUB_STEP_SUMMARY
+            docker buildx imagetools create --tag ${{ env.REGISTRY_IMAGE }}:${{ env.LATEST_TAG }} \
+              ${{ env.REGISTRY_IMAGE }}:latest-amd64 \
+              ${{ env.REGISTRY_IMAGE }}:latest-arm64
+              
+            echo "::notice::Successfully created 'latest' multi-architecture manifest"
           fi
 
   # Notification job
@@ -434,4 +267,5 @@ jobs:
         run: |
           echo "::notice::Workflow completed with status: ${{ steps.status.outputs.status }}"
           echo "::notice::${{ steps.status.outputs.message }}"
+
           
