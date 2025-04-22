@@ -34,7 +34,7 @@ ENV \
     \
     # Additional environment variables needed by Valheim
     LD_LIBRARY_PATH="/app/linux64" \
-    SteamAppId="892970" \
+    # SteamAppId="892970" \
     \
     # Log filtering for Valheim-specific logs
     LOG_FILTER_SKIP="Shader,shader,Camera,camera,CamZoom,Graphic,graphic,GUI,Gui,HDR,Mesh,null,Null,NULL,Gfx,memorysetup,audioclip,music,vendor"
