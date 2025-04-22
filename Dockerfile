@@ -34,7 +34,8 @@ ENV \
     \
     # Additional environment variables needed by Valheim
     LD_LIBRARY_PATH="/app/linux64" \
-    # SteamAppId="892970" \
+    # TODO why is this required? What is it?
+    SteamAppId="892970" \
     \
     # Log filtering for Valheim-specific logs
     LOG_FILTER_SKIP="Shader,shader,Camera,camera,CamZoom,Graphic,graphic,GUI,Gui,HDR,Mesh,null,Null,NULL,Gfx,memorysetup,audioclip,music,vendor"
@@ -51,7 +52,7 @@ ENV APP_ARGS="\
 -savedir \"$WORLD_FILES\" \
 -saveinterval 1800"
 
-ENV APP_COMMAND="$APP_COMMAND_PREFIX $APP_FILES/$APP_EXE"
+ENV APP_COMMAND="$APP_COMMAND_PREFIX $APP_FILES/$APP_EXE $APP_ARGS"
 
 COPY --chown=${CONTAINER_USER}:${CONTAINER_USER} scripts ${SCRIPTS}
 
