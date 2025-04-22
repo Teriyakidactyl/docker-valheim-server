@@ -53,12 +53,7 @@ ENV APP_ARGS="\
 
 ENV APP_COMMAND="$APP_COMMAND_PREFIX $APP_FILES/$APP_EXE"
 
-# Add scripts directory to image while preserving existing scripts
-COPY --chown=${CONTAINER_USER}:${CONTAINER_USER} scripts /tmp/valheim-scripts
-RUN cp -r /tmp/valheim-scripts/* ${SCRIPTS}/ && \
-    chown -R ${CONTAINER_USER}:${CONTAINER_USER} ${SCRIPTS} && \
-    chmod -R 755 ${SCRIPTS} && \
-    rm -rf /tmp/valheim-scripts
+COPY --chown=${CONTAINER_USER}:${CONTAINER_USER} scripts ${SCRIPTS}
 
 # Expose Valheim ports
 # 2456 - Game port
