@@ -51,6 +51,8 @@ ENV APP_ARGS="\
 -savedir \"$WORLD_FILES\" \
 -saveinterval 1800"
 
+ENV APP_COMMAND="$APP_COMMAND_PREFIX $APP_FILES/$APP_EXE"
+
 # Expose Valheim ports
 # 2456 - Game port
 # 2457 - Query port (must be SERVER_PORT+1)
@@ -60,4 +62,4 @@ EXPOSE 2456/udp 2457/udp
 HEALTHCHECK --interval=1m --timeout=3s CMD pidof $APP_EXE || exit 1
 
 # Use the base image's up.sh script to start the server
-CMD ["$SCRIPTS/up.sh"]
+CMD ["$SCRIPTS/container/up.sh"]
