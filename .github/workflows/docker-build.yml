@@ -113,8 +113,16 @@ jobs:
           ARCHITECTURE=$(echo ${{ matrix.platform }} | cut -d'/' -f2)
           echo "ARCHITECTURE=$ARCHITECTURE" >> $GITHUB_ENV
           
-          # Set the base image tag with architecture
-          BASE_TAG="${{ matrix.base_tag }}-$ARCHITECTURE"
+          # Determine base image branch suffix based on current branch
+          if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            BASE_BRANCH_SUFFIX="_dev"
+          else
+            BASE_BRANCH_SUFFIX=""
+          fi
+          echo "BASE_BRANCH_SUFFIX=$BASE_BRANCH_SUFFIX" >> $GITHUB_ENV
+          
+          # Set the base image tag with architecture and branch suffix
+          BASE_TAG="${{ matrix.base_tag }}${BASE_BRANCH_SUFFIX}-$ARCHITECTURE"
           echo "BASE_TAG=$BASE_TAG" >> $GITHUB_ENV
           
           # Generate tag parts (without registry path) for this build
@@ -161,6 +169,7 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             com.example.git.branch=${{ github.ref_name }}
             com.example.base.image=${{ env.BASE_REGISTRY_IMAGE }}:${{ env.BASE_TAG }}
+            com.example.base.branch=${{ github.ref_name }}
 
       # Build and push Docker image
       - name: Build and push Docker image
@@ -267,5 +276,4 @@ jobs:
         run: |
           echo "::notice::Workflow completed with status: ${{ steps.status.outputs.status }}"
           echo "::notice::${{ steps.status.outputs.message }}"
-
           
