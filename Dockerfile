@@ -43,12 +43,12 @@ ENV \
 ENV APP_ARGS="\
 -nographics \
 -batchmode \
--name "$SERVER_NAME" \
+-name $SERVER_NAME \
 -port $SERVER_PORT \
 -public $SERVER_PUBLIC \
--world "$WORLD_NAME" \
--password "$SERVER_PASS" \
--savedir "$WORLD_FILES" \
+-world $WORLD_NAME \
+-password $SERVER_PASS \
+-savedir $WORLD_FILES \
 -saveinterval 1800"
 
 ENV APP_COMMAND="$APP_COMMAND_PREFIX $APP_FILES/$APP_EXE $APP_ARGS"
