@@ -40,7 +40,8 @@ ENV \
     LOG_FILTER_SKIP="Shader,shader,Camera,camera,CamZoom,Graphic,graphic,GUI,Gui,HDR,Mesh,null,Null,NULL,Gfx,memorysetup,audioclip,music,vendor"
 
 # Define the command line arguments for the server
-ENV APP_ARGS="\
+# NOTE single quotes require later expansion
+ENV APP_ARGS='\
 -nographics \
 -batchmode \
 -name $SERVER_NAME \
@@ -49,9 +50,7 @@ ENV APP_ARGS="\
 -world $WORLD_NAME \
 -password $SERVER_PASS \
 -savedir $WORLD_FILES \
--saveinterval 1800"
-
-ENV APP_COMMAND="$APP_COMMAND_PREFIX $APP_FILES/$APP_EXE $APP_ARGS"
+-saveinterval 1800'
 
 # Expose Valheim ports
 # 2456 - Game port
