@@ -6,7 +6,7 @@
 CONTAINER_NAME="valheim-server"
 
 # Image name from your GitHub repo
-IMAGE_NAME="ghcr.io/teriyakidactyl/docker-valheim-server:latest_dev"
+IMAGE_NAME="ghcr.io/teriyakidactyl/docker-valheim-server:bookworm_dev"
 
 # Check if the container already exists
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
