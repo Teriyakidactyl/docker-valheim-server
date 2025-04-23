@@ -53,9 +53,6 @@ ENV APP_ARGS="\
 
 ENV APP_COMMAND="$APP_COMMAND_PREFIX $APP_FILES/$APP_EXE $APP_ARGS"
 
-VOLUME ["$APP_FILES"]
-VOLUME ["$WORLD_FILES"]
-
 # Expose Valheim ports
 # 2456 - Game port
 # 2457 - Query port (must be SERVER_PORT+1)
