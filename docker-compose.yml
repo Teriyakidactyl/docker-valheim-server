@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  valheim-server:
+    image: ghcr.io/teriyakidactyl/docker-valheim-server:latest
+    container_name: valheim-server
+    restart: unless-stopped
+    tty: true
+    
+    environment:
+      # Server configuration
+      - SERVER_NAME=MyValheimServer
+      - WORLD_NAME=Teriyakolypse
+      - SERVER_PASS=MySecretPassword
+      - SERVER_PUBLIC=0                # 0=Private, 1=Public
+      - SERVER_PORT=2456               # Default game port
+      
+      # Optional: Additional environment variables from Dockerfile
+      # - LOG_FILTER_SKIP=Shader,shader,Camera,camera,CamZoom,Graphic,graphic,GUI,Gui,HDR,Mesh,null,Null,NULL,Gfx,memorysetup,audioclip,music,vendor
+      # - BASE_TAG=bookworm            # To specify which version of the base image to use
+    
+    volumes:
+      - valheim_world:/world         # World data volume (internally $WORLD_FILES)
+      - valheim_app:/app             # Application files volume (internally $APP_FILES)
+      # Optional: Mount the permitted players list separately
+      # - ./valheim/permitted_list.txt:/world/permittedlist.txt
+    
+    ports:
+      - "2456:2456/udp"                # Main UDP Game Port
+      - "2457:2457/udp"                # Query Port (MUST be +1 from SERVER_PORT)
+      # Optional: If you change SERVER_PORT, remember to update these mappings
+
+volumes:
+  valheim_world:
+    name: valheim_world
+  valheim_app:
+    name: valheim_app

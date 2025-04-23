@@ -30,11 +30,10 @@ ENV \
     SERVER_PORT="2456" \
     \
     # Path for allowed players list
-    STEAM_ALLOW_LIST_PATH="/world/permittedlist.txt" \
+    STEAM_ALLOW_LIST_PATH="$WORLD_FILES/permittedlist.txt" \
     \
     # Additional environment variables needed by Valheim
     LD_LIBRARY_PATH="/app/linux64" \
-    # TODO why is this required? What is it?
     SteamAppId="892970" \
     \
     # Log filtering for Valheim-specific logs
@@ -54,13 +53,10 @@ ENV APP_ARGS="\
 
 ENV APP_COMMAND="$APP_COMMAND_PREFIX $APP_FILES/$APP_EXE $APP_ARGS"
 
+VOLUME ["$APP_FILES"]
+VOLUME ["$WORLD_FILES"]
+
 # Expose Valheim ports
 # 2456 - Game port
 # 2457 - Query port (must be SERVER_PORT+1)
 EXPOSE 2456/udp 2457/udp
-
-# Health check
-HEALTHCHECK --interval=1m --timeout=3s CMD pidof $APP_EXE || exit 1
-
-# Use the base image's up.sh script to start the server
-CMD ["/bin/bash", "-c", "$SCRIPTS/container/up.sh"]
