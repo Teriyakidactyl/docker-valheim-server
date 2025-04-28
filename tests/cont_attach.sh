@@ -6,7 +6,7 @@
 CONTAINER_NAME="valheim-server"
 
 # Image name
-IMAGE_NAME="ghcr.io/teriyakidactyl/docker-valheim-server:bookworm_dev"
+IMAGE_NAME="ghcr.io/teriyakidactyl/docker-valheim-server:trixie_dev-arm64"
 
 # Check if container already exists
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
