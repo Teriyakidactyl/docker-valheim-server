@@ -121,8 +121,10 @@ jobs:
           fi
           echo "BASE_BRANCH_SUFFIX=$BASE_BRANCH_SUFFIX" >> $GITHUB_ENV
           
-          # Set the base image tag with architecture and branch suffix
-          BASE_TAG="${{ matrix.base_tag }}${BASE_BRANCH_SUFFIX}-$ARCHITECTURE"
+          # Pull the base through its multi-architecture alias and let Buildx
+          # select the matching platform. Reconstructing internal architecture
+          # tags couples this derivative to the base registry's tag spelling.
+          BASE_TAG="${{ matrix.base_tag }}${BASE_BRANCH_SUFFIX}"
           echo "BASE_TAG=$BASE_TAG" >> $GITHUB_ENV
           
           # Generate tag parts (without registry path) for this build

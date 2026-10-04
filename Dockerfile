@@ -2,14 +2,22 @@
 # This Dockerfile leverages the base image that provides SteamCMD, architecture detection,
 # Box86/Box64 for ARM compatibility, and other common functionality.
 
-# The BASE_TAG argument allows specifying which version of the base image to use
+# Consume the shared base through its published multi-architecture alias. The
+# base owns architecture selection and only moves these aliases after its own
+# runtime validation/publication gates pass.
+ARG BASE_IMAGE=ghcr.io/teriyakidactyl/docker-steamcmd-server
 ARG BASE_TAG=bookworm
-FROM ghcr.io/teriyakidactyl/docker-steamcmd-server:${BASE_TAG}
+FROM ${BASE_IMAGE}:${BASE_TAG}
+
+# Pre-FROM args must be re-declared before they can be used in image metadata.
+ARG BASE_IMAGE
+ARG BASE_TAG
 
 # Labels for metadata
 LABEL org.opencontainers.image.title="Valheim Server"
 LABEL org.opencontainers.image.description="Valheim dedicated server based on docker-steamcmd-server"
 LABEL org.opencontainers.image.vendor="TeriyakiDactyl"
+LABEL org.opencontainers.image.base.name="${BASE_IMAGE}:${BASE_TAG}"
 LABEL game.title="Valheim"
 LABEL game.developer="Iron Gate AB"
 LABEL game.publisher="Coffee Stain Publishing"
