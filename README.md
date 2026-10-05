@@ -1,103 +1,123 @@
 # Docker Valheim Server Images
 
-This Docker image provides a Valheim dedicated server, supporting **both `amd64` and `arm64` (x86, arm) architectures.**
+Multi-architecture Valheim dedicated-server image built on
+[`docker-steamcmd-server`](https://github.com/Teriyakidactyl/docker-steamcmd-server).
+The shared base owns SteamCMD updates, architecture adaptation, process
+supervision, health checks, and lifecycle hooks; this image supplies the Valheim
+runtime contract and operator-facing configuration.
 
-![Teriyakidactyl Delivers!™](/images/teriyakidactyl_valheim.png)
-
-**_Teriyakidactyl Delivers!™_**
+![Teriyakidactyl Delivers!](./images/teriyakidactyl_valheim.png)
 
 ## Features
 
-- Supports `amd64` and `arm64` architectures
-- Runs under non-root user
-- Automatic server updates via [steamcmd](https://developer.valvesoftware.com/wiki/SteamCMD) (on reboot)
-- Cross-platform compatibility using [Box86](https://github.com/ptitSeb/box86)/[Box64](https://github.com/ptitSeb/box64) for `arm64` systems (tested on [Oracle Ampere](https://www.oracle.com/cloud/compute/arm/))
-- Lightweight running only the minimal packages required for stability
-- Colored :rainbow: (even in Portainer), organized logs
+- `amd64` and `arm64` images from the same Valheim configuration
+- Box64 execution on `arm64`, supplied by the shared base
+- Non-root game execution
+- SteamCMD update-on-start with persistent application state under `/app`
+- Persistent worlds and permission files under `/world`
+- Argument-safe server names, world names, and passwords
+- Graceful Valheim shutdown using `SIGINT`/CTRL+C semantics
+- Environment-driven permitted-list reconciliation
 
-![Teriyakidactyl Delivers!™](/images/logs.png)
+## Configuration
 
-## Environment Variables
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SERVER_NAME` | `MyValheimServer` | Name advertised by the server |
+| `WORLD_NAME` | `Teriyakolypse` | World name passed to `-world` |
+| `SERVER_PASS` | `MySecretPassword` | Server password |
+| `SERVER_PUBLIC` | `0` | `0` for private/unlisted, `1` for public |
+| `SERVER_PORT` | `2456` | Base game port; Valheim also consumes this port + 1 |
+| `STEAM_ID_ALLOW_LIST` | empty | Comma- or newline-separated Valheim Platform User IDs to project into `permittedlist.txt` |
+| `SERVER_ALLOW_LIST` | empty | Legacy compatibility alias for `STEAM_ID_ALLOW_LIST` |
+| `STEAM_ID_ALLOW_LIST_PATH` | `/world/permittedlist.txt` | Optional canonical permitted-list path override |
+| `UPDATE_ON_START` | `true` | Run SteamCMD update before launch |
+| `STEAM_VALIDATE` | `false` | Ask SteamCMD to validate the server installation |
+| `SHUTDOWN_TIMEOUT` | `30` | Seconds the shared supervisor waits for the Valheim process group before escalation |
 
-Configure your server using the following environment variables:
+Valheim permission files use Platform User IDs, not SteamID64-only values. The
+current upstream format is `[Platform]_[User ID]`, one entry per line. When an
+environment allow-list is populated, the container manages the target
+`permittedlist.txt`. Clearing a value previously managed by the container
+removes that managed file. If no environment allow-list has claimed the file, an
+operator-created `permittedlist.txt` is left untouched.
 
-- `SERVER_PUBLIC`: Set server visibility (default: "0" for private)
-- `SERVER_PASS`: Server password (default: "MySecretPassword")
-- `SERVER_NAME`: Server name (default: "MyValheimServer")
-- `SERVER_ALLOW_LIST`: List of [SteamID64](https://www.steamidfinder.com/) strings to indicate allowed players (default: empty, allow-all).  
-- `WORLD_NAME`: World name (default: "Teriyakolypse")
+The historical `STEAM_ALLOW_LIST_PATH` variable is accepted as a path
+compatibility alias, but new deployments should use `STEAM_ID_ALLOW_LIST_PATH`.
 
 ## Usage
 
-1. Pull the image:
-   
-```bash
-docker pull ghcr.io/teriyakidactyl/docker-valheim-server:latest
-```
-
-2. Run the container:
-   
 ```bash
 UR_PATH="/root/valheim"
-mkdir -p $UR_PATH/world  $UR_PATH/app
+mkdir -p "$UR_PATH/world" "$UR_PATH/app"
 
 docker run -d \
--e SERVER_NAME="My Server" \
--e WORLD_NAME="Teriyakolypse" \
--e SERVER_PASS="secret" \
--v $UR_PATH/world:/world \
--v $UR_PATH/app:/app \
--p 2456-2457:2456-2457/udp \
---name Valheim-Server \
-ghcr.io/teriyakidactyl/docker-valheim-server:latest
-
+  --name Valheim-Server \
+  --restart unless-stopped \
+  --stop-timeout 45 \
+  -e SERVER_NAME="My Server" \
+  -e WORLD_NAME="Teriyakolypse" \
+  -e SERVER_PASS="secret password" \
+  -e SERVER_PUBLIC="0" \
+  -v "$UR_PATH/world:/world" \
+  -v "$UR_PATH/app:/app" \
+  -p 2456-2457:2456-2457/udp \
+  ghcr.io/teriyakidactyl/docker-valheim-server:latest
 ```
 
-Replace `UR_PATH="/root/valheim"` with the path where you want to store your app/world data.
+The argument file preserves values such as `My Server` and `secret password`
+as single Valheim arguments instead of re-tokenizing them through a shell
+string.
 
-## Building the Image
+The Compose example exposes `SERVER_PORT` and a separate
+`SERVER_QUERY_PORT` interpolation because Compose cannot calculate
+`SERVER_PORT+1`. If the base port changes, set `SERVER_QUERY_PORT` to the
+next port as well.
 
-To build the image yourself:
+## Persistence
 
-```docker build -t ghcr.io/teriyakidactyl/docker-valheim-server:latest .```
+| Path | Purpose |
+| --- | --- |
+| `/app` | Valheim dedicated-server installation and shared-base Steam state |
+| `/world` | Worlds, backups, permission files, and other save-path state |
 
-## Healthcheck
+Keep both paths persistent across container recreation.
 
-The container includes a basic healthcheck that verifies if the Valheim server process is running.
+## Shutdown
+
+Valheim's upstream server guidance requires CTRL+C for a clean stop. The image
+therefore sets `APP_STOP_SIGNAL=INT`. The shared supervisor sends that signal
+to the complete launched process group and waits up to `SHUTDOWN_TIMEOUT`
+before escalating. The Compose example uses a 45-second Docker grace period so
+Docker's outer timeout exceeds the image's 30-second internal shutdown ceiling.
+
+## Health check
+
+The inherited health check verifies that the launched Valheim process recorded
+by the shared supervisor is still alive.
+
+## Building
+
+```bash
+docker build -t ghcr.io/teriyakidactyl/docker-valheim-server:latest .
+```
+
+`BASE_TAG` defaults to `bookworm`; `trixie` is also published.
+
+## Image tags
+
+The main build matrix publishes `bookworm` and `trixie` multi-architecture
+manifests plus architecture-specific variants such as `bookworm-amd64` and
+`trixie-arm64`. `latest` tracks the main-branch `bookworm` image.
+Development branch builds use `_dev` on the base-family tags.
+
+## Upstream server behavior
+
+Iron Gate's dedicated-server guide documents the current command-line,
+permission-file, port, persistence, and shutdown behavior:
+<https://valheim.com/support/a-guide-to-dedicated-servers/>.
 
 ## Support
 
-For issues, feature requests, or contributions, please use the GitHub issue tracker.
-
-## Docker Image Tags
-
-Our Docker images are tagged using a comprehensive scheme to ensure proper versioning and traceability. The tagging strategy is as follows:
-
-1. **Branch-based tags:**
-   - For the `main` branch: `ghcr.io/teriyakidactyl/docker-valheim-server:main`
-   - For the `dev` branch: `ghcr.io/teriyakidactyl/docker-valheim-server:dev`
-   - For other branches: `ghcr.io/teriyakidactyl/docker-valheim-server:<branch-name>`
-
-2. **Pull Request tags:**
-   - For pull requests: `ghcr.io/teriyakidactyl/docker-valheim-server:pr-<PR-number>`
-
-3. **Semantic Version tags:**
-   - When a git tag with a semantic version is pushed (e.g., v1.2.3):
-     - `ghcr.io/teriyakidactyl/docker-valheim-server:1.2.3`
-     - `ghcr.io/teriyakidactyl/docker-valheim-server:1.2`
-
-4. **Commit SHA tags:**
-   - Each build is also tagged with the full git commit SHA:
-     `ghcr.io/teriyakidactyl/docker-valheim-server:sha-<full-commit-hash>`
-
-This tagging scheme allows for easy identification of images built from specific branches, pull requests, versions, or commits. It supports various use cases, from development and testing to production deployments.
-
-- Use the branch-based tags for ongoing development and staging environments.
-- Use the semantic version tags for production deployments and version tracking.
-- Use the commit SHA tags for precise reproduction of builds or debugging.
-
-The latest build from the `main` branch is always available with the `latest` tag:
-`ghcr.io/teriyakidactyl/docker-valheim-server:latest`
-
-Note: The actual availability of these tags depends on the specific git operations performed (pushes, pull requests, tagging) and the successful completion of the CI/CD pipeline.
-
+For issues, feature requests, or contributions, use this repository's GitHub
+issue tracker.

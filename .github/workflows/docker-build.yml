@@ -2,159 +2,128 @@ name: Build Valheim Server Docker Images
 
 on:
   push:
-    branches:
-      - dev
-      - main
+    branches: [dev, main]
     paths:
       - 'Dockerfile'
+      - 'docker-compose.yml'
       - '.github/workflows/**'
       - 'scripts/**'
+      - 'tests/**'
   pull_request:
-    branches:
-      - dev
-      - main
+    branches: [dev, main]
     paths:
       - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'README.md'
       - '.github/workflows/**'
       - 'scripts/**'
-  workflow_dispatch:  # Allows manual triggering
+      - 'tests/**'
+  workflow_dispatch:
 
-# Add concurrency control to cancel in-progress workflows when new commits are pushed
+permissions:
+  contents: read
+  packages: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Global environment variables used throughout the workflow
 env:
-  # Registry information
   REGISTRY_IMAGE: ghcr.io/teriyakidactyl/docker-valheim-server
-  
-  # Base image registry
   BASE_REGISTRY_IMAGE: ghcr.io/teriyakidactyl/docker-steamcmd-server
-  
-  # Matrix Configuration - Base image tags to build upon
-  # These should match the available tags from the base image
   MATRIX_BASE_TAGS: |
     bookworm
     trixie
-
-  # Target platforms
   MATRIX_PLATFORMS: |
     linux/amd64
     linux/arm64
 
 jobs:
-  # Setup job to process matrix values from environment variables
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate shell scripts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck gettext-base
+          find scripts tests -type f -name '*.sh' -print0 | xargs -0 -r bash -n
+          find scripts tests -type f -name '*.sh' -print0 | xargs -0 -r shellcheck --severity=error
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
+      - name: Test Valheim contracts
+        run: |
+          for test_script in tests/test_*.sh; do
+            bash "$test_script"
+          done
+      - name: Validate Compose
+        run: docker compose config >/dev/null
+
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 5  # Set timeout limit
+    timeout-minutes: 5
     outputs:
       base-tags: ${{ steps.set-matrix.outputs.base-tags }}
       platforms: ${{ steps.set-matrix.outputs.platforms }}
     steps:
       - id: set-matrix
-        name: Process matrix configurations
         run: |
-          # Process the multiline env vars into JSON arrays for matrix strategy
-          # Remove empty lines, add quotes, convert to JSON array
           BASE_TAGS=$(echo '${{ env.MATRIX_BASE_TAGS }}' | grep -v '^$' | awk '{print "\""$0"\""}' | paste -sd, | awk '{print "["$0"]"}')
           PLATFORMS=$(echo '${{ env.MATRIX_PLATFORMS }}' | grep -v '^$' | awk '{print "\""$0"\""}' | paste -sd, | awk '{print "["$0"]"}')
-          
-          # Echo the values for debugging
-          echo "Generated base-tags: $BASE_TAGS"
-          echo "Generated platforms: $PLATFORMS"
-          
-          # Set the outputs
-          echo "base-tags=$BASE_TAGS" >> $GITHUB_OUTPUT
-          echo "platforms=$PLATFORMS" >> $GITHUB_OUTPUT
+          echo "base-tags=$BASE_TAGS" >> "$GITHUB_OUTPUT"
+          echo "platforms=$PLATFORMS" >> "$GITHUB_OUTPUT"
 
-  # Build job that creates individual architecture-specific images
   build:
-    needs: setup
+    needs: [quality, setup]
     runs-on: ubuntu-latest
-    timeout-minutes: 60  # Set timeout limit
+    timeout-minutes: 60
     strategy:
       matrix:
         base_tag: ${{ fromJson(needs.setup.outputs.base-tags) }}
         platform: ${{ fromJson(needs.setup.outputs.platforms) }}
-      fail-fast: false  # Continue other matrix builds if one fails
-
+      fail-fast: false
     steps:
-      # Check out the repository code
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      # Set up QEMU for multi-platform builds
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
         with:
           platforms: ${{ matrix.platform }}
-
-      # Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          install: true
-
-      # Log in to GitHub Container Registry (only for pushes, not PRs)
+      - uses: docker/setup-buildx-action@v3
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
-
-      # Prepare tag variables
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Prepare tag variables
-        id: prep-tags
         run: |
-          # Extract architecture from platform
-          ARCHITECTURE=$(echo ${{ matrix.platform }} | cut -d'/' -f2)
-          echo "ARCHITECTURE=$ARCHITECTURE" >> $GITHUB_ENV
-          
-          # Determine base image branch suffix based on current branch
+          ARCHITECTURE=$(echo '${{ matrix.platform }}' | cut -d'/' -f2)
+          echo "ARCHITECTURE=$ARCHITECTURE" >> "$GITHUB_ENV"
           if [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
             BASE_BRANCH_SUFFIX="_dev"
           else
             BASE_BRANCH_SUFFIX=""
           fi
-          echo "BASE_BRANCH_SUFFIX=$BASE_BRANCH_SUFFIX" >> $GITHUB_ENV
-          
-          # Pull the base through its multi-architecture alias and let Buildx
-          # select the matching platform. Reconstructing internal architecture
-          # tags couples this derivative to the base registry's tag spelling.
-          BASE_TAG="${{ matrix.base_tag }}${BASE_BRANCH_SUFFIX}"
-          echo "BASE_TAG=$BASE_TAG" >> $GITHUB_ENV
-          
-          # Generate tag parts (without registry path) for this build
-          # For normal builds (main branch)
+          echo "BASE_BRANCH_SUFFIX=$BASE_BRANCH_SUFFIX" >> "$GITHUB_ENV"
+          echo "BASE_TAG=${{ matrix.base_tag }}$BASE_BRANCH_SUFFIX" >> "$GITHUB_ENV"
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            # Versioned tag (includes base image tag)
-            echo "VERSIONED_TAG=${{ matrix.base_tag }}-$ARCHITECTURE" >> $GITHUB_ENV
-            
-            # Latest tag per architecture (if using the default base tag, typically 'bookworm')
+            echo "VERSIONED_TAG=${{ matrix.base_tag }}-$ARCHITECTURE" >> "$GITHUB_ENV"
             if [[ "${{ matrix.base_tag }}" == "bookworm" ]]; then
-              echo "LATEST_ARCH_TAG=latest-$ARCHITECTURE" >> $GITHUB_ENV
+              echo "LATEST_ARCH_TAG=latest-$ARCHITECTURE" >> "$GITHUB_ENV"
             else
-              echo "LATEST_ARCH_TAG=" >> $GITHUB_ENV
+              echo "LATEST_ARCH_TAG=" >> "$GITHUB_ENV"
             fi
           else
-            # For dev branch, add _dev suffix
-            echo "VERSIONED_TAG=${{ matrix.base_tag }}_dev-$ARCHITECTURE" >> $GITHUB_ENV
-            echo "LATEST_ARCH_TAG=" >> $GITHUB_ENV
+            echo "VERSIONED_TAG=${{ matrix.base_tag }}_dev-$ARCHITECTURE" >> "$GITHUB_ENV"
+            echo "LATEST_ARCH_TAG=" >> "$GITHUB_ENV"
           fi
-          
-          # Branch tag
-          BRANCH_TAG="${{ github.ref_name }}-$ARCHITECTURE"
-          echo "BRANCH_TAG=$BRANCH_TAG" >> $GITHUB_ENV
-          
-          # Set build date for metadata
-          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
-
-      # Generate metadata for Docker image, including tags
-      - name: Generate Docker metadata
-        id: meta
+          echo "BRANCH_TAG=${{ github.ref_name }}-$ARCHITECTURE" >> "$GITHUB_ENV"
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+      - id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY_IMAGE }}
@@ -171,12 +140,7 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             com.example.git.branch=${{ github.ref_name }}
             com.example.base.image=${{ env.BASE_REGISTRY_IMAGE }}:${{ env.BASE_TAG }}
-            com.example.base.branch=${{ github.ref_name }}
-
-      # Build and push Docker image
-      - name: Build and push Docker image
-        id: docker_build
-        uses: docker/build-push-action@v5
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -185,97 +149,55 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BASE_TAG=${{ env.BASE_TAG }}
-            SOURCE_COMMIT=${{ github.sha }}
-            BUILD_DATE=${{ env.BUILD_DATE }}
           platforms: ${{ matrix.platform }}
-          cache-from: |
-            type=gha,scope=${{ matrix.base_tag }}-${{ matrix.platform }}
-          cache-to: |
-            type=gha,scope=${{ matrix.base_tag }}-${{ matrix.platform }},mode=max
+          cache-from: type=gha,scope=${{ matrix.base_tag }}-${{ matrix.platform }}
+          cache-to: type=gha,scope=${{ matrix.base_tag }}-${{ matrix.platform }},mode=max
 
-  # Create multi-architecture manifests
   create-manifest:
-    needs: [setup, build]  # Add setup as a dependency to access its outputs
+    needs: [setup, build]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: github.event_name != 'pull_request'
     strategy:
       matrix:
         base_tag: ${{ fromJson(needs.setup.outputs.base-tags) }}
-    
     steps:
-      # Add a debug step to verify the outputs
-      - name: Debug job outputs
-        run: |
-          echo "setup.outputs.base-tags: '${{ needs.setup.outputs.base-tags }}'"
-          
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
-          
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate manifest tag names
-        id: manifest-tags
         run: |
-          # Generate manifest tag name without registry path
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            # For main branch
-            echo "MANIFEST_TAG=${{ matrix.base_tag }}" >> $GITHUB_ENV
-            
-            # Set latest tag if this is the default base tag (typically 'bookworm')
+            echo "MANIFEST_TAG=${{ matrix.base_tag }}" >> "$GITHUB_ENV"
             if [[ "${{ matrix.base_tag }}" == "bookworm" ]]; then
-              echo "LATEST_TAG=latest" >> $GITHUB_ENV
-              echo "HAS_LATEST_TAG=true" >> $GITHUB_ENV
+              echo "LATEST_TAG=latest" >> "$GITHUB_ENV"
+              echo "HAS_LATEST_TAG=true" >> "$GITHUB_ENV"
             else
-              echo "HAS_LATEST_TAG=false" >> $GITHUB_ENV
+              echo "HAS_LATEST_TAG=false" >> "$GITHUB_ENV"
             fi
           else
-            # For dev branch, add _dev suffix
-            echo "MANIFEST_TAG=${{ matrix.base_tag }}_dev" >> $GITHUB_ENV
-            echo "HAS_LATEST_TAG=false" >> $GITHUB_ENV
+            echo "MANIFEST_TAG=${{ matrix.base_tag }}_dev" >> "$GITHUB_ENV"
+            echo "HAS_LATEST_TAG=false" >> "$GITHUB_ENV"
           fi
-      
-      # Create and push multi-architecture manifests using buildx imagetools
       - name: Create and push multi-architecture manifests
         run: |
-          # Create manifest tag
-          docker buildx imagetools create --tag ${{ env.REGISTRY_IMAGE }}:${{ env.MANIFEST_TAG }} \
-            ${{ env.REGISTRY_IMAGE }}:${{ matrix.base_tag }}${{ github.ref == 'refs/heads/main' && '' || '_dev' }}-amd64 \
-            ${{ env.REGISTRY_IMAGE }}:${{ matrix.base_tag }}${{ github.ref == 'refs/heads/main' && '' || '_dev' }}-arm64
-          
-          echo "::notice::Successfully created manifest for ${{ env.REGISTRY_IMAGE }}:${{ env.MANIFEST_TAG }}"
-          
-          # Create latest tag if applicable
+          docker buildx imagetools create --tag "${{ env.REGISTRY_IMAGE }}:${{ env.MANIFEST_TAG }}"             "${{ env.REGISTRY_IMAGE }}:${{ matrix.base_tag }}${{ github.ref == 'refs/heads/main' && '' || '_dev' }}-amd64"             "${{ env.REGISTRY_IMAGE }}:${{ matrix.base_tag }}${{ github.ref == 'refs/heads/main' && '' || '_dev' }}-arm64"
           if [[ "${{ env.HAS_LATEST_TAG }}" == "true" ]]; then
-            docker buildx imagetools create --tag ${{ env.REGISTRY_IMAGE }}:${{ env.LATEST_TAG }} \
-              ${{ env.REGISTRY_IMAGE }}:latest-amd64 \
-              ${{ env.REGISTRY_IMAGE }}:latest-arm64
-              
-            echo "::notice::Successfully created 'latest' multi-architecture manifest"
+            docker buildx imagetools create --tag "${{ env.REGISTRY_IMAGE }}:${{ env.LATEST_TAG }}"               "${{ env.REGISTRY_IMAGE }}:latest-amd64"               "${{ env.REGISTRY_IMAGE }}:latest-arm64"
           fi
 
-  # Notification job
   notify:
     needs: [create-manifest]
     runs-on: ubuntu-latest
-    if: always()
+    if: always() && github.event_name != 'pull_request'
     steps:
-      - name: Set status
-        id: status
+      - name: Report workflow status
         run: |
           if [[ "${{ needs.create-manifest.result }}" == "success" ]]; then
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "message=Docker images successfully built and pushed" >> $GITHUB_OUTPUT
+            echo "::notice::Docker images successfully built and pushed"
           else
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "message=Failed to build or push some Docker images" >> $GITHUB_OUTPUT
+            echo "::error::Failed to build or push some Docker images"
+            exit 1
           fi
-      
-      # Update GitHub status with workflow results
-      - name: Update status
-        run: |
-          echo "::notice::Workflow completed with status: ${{ steps.status.outputs.status }}"
-          echo "::notice::${{ steps.status.outputs.message }}"
-          

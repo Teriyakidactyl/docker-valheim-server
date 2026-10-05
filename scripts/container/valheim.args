@@ -1,0 +1,16 @@
+-nographics
+-batchmode
+-name
+$SERVER_NAME
+-port
+$SERVER_PORT
+-public
+$SERVER_PUBLIC
+-world
+$WORLD_NAME
+-password
+$SERVER_PASS
+-savedir
+$WORLD_FILES
+-saveinterval
+1800
