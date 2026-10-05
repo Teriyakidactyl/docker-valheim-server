@@ -1,10 +1,7 @@
 # Valheim Server - Based on docker-steamcmd-server
-# This Dockerfile leverages the base image that provides SteamCMD, architecture detection,
-# Box86/Box64 for ARM compatibility, and other common functionality.
+# The shared base owns SteamCMD, architecture adaptation, process supervision,
+# and lifecycle hooks. This image supplies Valheim's application contract.
 
-# Consume the shared base through its published multi-architecture alias. The
-# base owns architecture selection and only moves these aliases after its own
-# runtime validation/publication gates pass.
 ARG BASE_IMAGE=ghcr.io/teriyakidactyl/docker-steamcmd-server
 ARG BASE_TAG=bookworm
 FROM ${BASE_IMAGE}:${BASE_TAG}
@@ -13,54 +10,45 @@ FROM ${BASE_IMAGE}:${BASE_TAG}
 ARG BASE_IMAGE
 ARG BASE_TAG
 
-# Labels for metadata
-LABEL org.opencontainers.image.title="Valheim Server"
-LABEL org.opencontainers.image.description="Valheim dedicated server based on docker-steamcmd-server"
-LABEL org.opencontainers.image.vendor="TeriyakiDactyl"
-LABEL org.opencontainers.image.base.name="${BASE_IMAGE}:${BASE_TAG}"
-LABEL game.title="Valheim"
-LABEL game.developer="Iron Gate AB"
-LABEL game.publisher="Coffee Stain Publishing"
+LABEL org.opencontainers.image.title="Valheim Server" \
+      org.opencontainers.image.description="Valheim dedicated server based on docker-steamcmd-server" \
+      org.opencontainers.image.vendor="TeriyakiDactyl" \
+      org.opencontainers.image.base.name="${BASE_IMAGE}:${BASE_TAG}" \
+      game.title="Valheim" \
+      game.developer="Iron Gate AB" \
+      game.publisher="Coffee Stain Publishing"
 
-# Game-specific environment variables
-ENV \
-    # Game identification
-    APP_NAME="valheim" \
+ENV APP_NAME="valheim" \
     APP_EXE="valheim_server.x86_64" \
+    APP_ARGS_FILE="/usr/local/share/valheim/valheim.args" \
+    APP_STOP_SIGNAL="INT" \
+    SHUTDOWN_TIMEOUT="30" \
     STEAM_SERVER_APPID="896660" \
     STEAM_PLATFORM_TYPE="linux" \
-    \
-    # Server configuration - defaults that can be overridden
     SERVER_NAME="MyValheimServer" \
     SERVER_PASS="MySecretPassword" \
     SERVER_PUBLIC="0" \
     WORLD_NAME="Teriyakolypse" \
     SERVER_PORT="2456" \
-    \
-    # Path for allowed players list
-    STEAM_ALLOW_LIST_PATH="$WORLD_FILES/permittedlist.txt" \
-    \
-    # Additional environment variables needed by Valheim
     LD_LIBRARY_PATH="/app/linux64" \
     SteamAppId="892970" \
-    \
-    # Log filtering for Valheim-specific logs
     LOG_FILTER_SKIP="Shader,shader,Camera,camera,CamZoom,Graphic,graphic,GUI,Gui,HDR,Mesh,null,Null,NULL,Gfx,memorysetup,audioclip,music,vendor"
 
-# Define the command line arguments for the server
-# NOTE single quotes require later expansion
-ENV APP_ARGS='\
--nographics \
--batchmode \
--name $SERVER_NAME \
--port $SERVER_PORT \
--public $SERVER_PUBLIC \
--world $WORLD_NAME \
--password $SERVER_PASS \
--savedir $WORLD_FILES \
--saveinterval 1800'
+USER root
 
-# Expose Valheim ports
-# 2456 - Game port
-# 2457 - Query port (must be SERVER_PORT+1)
+RUN mkdir -p /usr/local/share/valheim "${HOOK_DIRECTORIES}/pre-startup"
+
+COPY scripts/container/valheim.args /usr/local/share/valheim/valheim.args
+COPY scripts/container/hooks/pre-startup/30_valheim.sh ${HOOK_DIRECTORIES}/pre-startup/30_valheim.sh
+
+RUN chown root:root \
+        /usr/local/share/valheim/valheim.args \
+        "${HOOK_DIRECTORIES}/pre-startup/30_valheim.sh" && \
+    chmod 0644 /usr/local/share/valheim/valheim.args && \
+    chmod 0755 "${HOOK_DIRECTORIES}/pre-startup/30_valheim.sh"
+
+USER ${CONTAINER_USER}
+
+# Valheim uses SERVER_PORT and SERVER_PORT+1. EXPOSE documents the defaults;
+# operators using another SERVER_PORT must publish the corresponding pair.
 EXPOSE 2456/udp 2457/udp
