@@ -69,6 +69,11 @@ The argument file preserves values such as `My Server` and `secret password`
 as single Valheim arguments instead of re-tokenizing them through a shell
 string.
 
+The Compose example exposes `SERVER_PORT` and a separate
+`SERVER_QUERY_PORT` interpolation because Compose cannot calculate
+`SERVER_PORT+1`. If the base port changes, set `SERVER_QUERY_PORT` to the
+next port as well.
+
 ## Persistence
 
 | Path | Purpose |
